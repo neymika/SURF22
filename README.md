@@ -1,9 +1,8 @@
 # SURF22
  Summer Research
 
-## Week 1
+## :worried: Week 1
   * 6/14: Got COVID :sob: :mask: :anger:... ON THE VERY FIRST DAY! Just my luck...
-  * 6/21: Still have COVID. :disappointed: :shit: :skull:
   * Worked on basic implementations of least squares solution for basic estimator in jupyter notebook and python script.
     * Requires the following package installations:
       * ```python
@@ -34,3 +33,8 @@
       * ```python
         python3 toymultifidelity.py filename.png a b lowsample highsample budget alpha
         ```
+
+## :weary: Week 2
+  * 6/21: Still have COVID. :disappointed: :shit: :skull:
+  * Bokeh is a problem child sometimes, so in case of anything
+  * Made a quick script of the steepest descent code. Will make clean and debug.
