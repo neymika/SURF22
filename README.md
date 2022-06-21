@@ -36,5 +36,5 @@
 
 ## :weary: Week 2
   * 6/21: Still have COVID. :disappointed: :shit: :skull:
-  * Bokeh is a problem child sometimes, so in case of anything
+  * Bokeh is a problem child sometimes, so in case of any issues, can just run the same code the same way but make sure matplotlib is at least installed.
   * Made a quick script of the steepest descent code. Will make clean and debug.
