@@ -1,6 +1,14 @@
 import pandas as pd
 import numpy as np
 from scipy import optimize
+import timeit
+
+normtable = pd.read_csv("data_normalized.csv", header=None)
+xi = np.array([normtable.iloc[0, 0:48]])
+yi = np.array([normtable.iloc[0, 48]])
+for i in range(1, 200):
+    xi = np.append(xi, [normtable.iloc[i, 0:48]], axis=0)
+    yi = np.append(yi, [normtable.iloc[i, 48]], axis=0)
 
 def jacob(sig, lam=10e-2):
     c = (lam/2)*np.matmul(np.transpose(sig), sig)
@@ -104,13 +112,6 @@ def steepestdescent(f, df, x0, tau, alf0, mu1, mu2, sigma):
     return xhist, losses
 
 def main():
-    normtable = pd.read_csv("data_normalized.csv", header=None)
-    xi = np.array([normtable.iloc[0, 0:48]])
-    yi = np.array([normtable.iloc[0, 48]])
-    for i in range(1, 200):
-        xi = np.append(xi, [normtable.iloc[i, 0:48]], axis=0)
-        yi = np.append(yi, [normtable.iloc[i, 48]], axis=0)
-
     test_start_iter = timeit.default_timer()
     sigmafound, siglosses = steepestdescent(jacob, dfjacob, np.ones(shape=(xi[1].shape[0]+1,)), 1e-5, 1, .0001, .9, 2)
     test_end_iter = timeit.default_timer()
