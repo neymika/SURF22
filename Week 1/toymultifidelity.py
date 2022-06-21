@@ -1,8 +1,9 @@
 import numpy as np
+import matplotlib.pyplot as plt
 import bokeh.plotting
 from bokeh.io import output_notebook, export_png
 import sys
-
+plt.style.use('seaborn-white')
 # Set up basic style of bokeh plotting
 # output_notebook()
 def style(p, autohide=False):
@@ -71,26 +72,37 @@ def main():
     hhist, hedges = np.histogram(exps[0], density=True, bins=50)
     lhist, ledges = np.histogram(exps[1], density=True, bins=50)
     mfhist, mfedges = np.histogram(exps[2], density=True, bins=50)
-    p = bokeh.plotting.figure(height=300, width=800, x_axis_label="Expected Values", \
+    try:
+        p = bokeh.plotting.figure(height=300, width=800, x_axis_label="Expected Values", \
                               y_axis_label="Frequency")
-    p.quad(top=hhist, bottom=0, left=hedges[:-1], right=hedges[1:],
-               fill_color="navy", line_color="navy", alpha=0.5)
-    p.quad(top=lhist, bottom=0, left=ledges[:-1], right=ledges[1:],
-               fill_color="seagreen", line_color="seagreen", alpha=0.5)
-    p.quad(top=mfhist, bottom=0, left=mfedges[:-1], right=mfedges[1:],
-               fill_color="maroon", line_color="maroon", alpha=0.5)
-    p.title.align = "center"
-    legend = bokeh.models.Legend(items=[("Expected Values of High-Fidelity Model", [p.line(line_color="navy")]),
-                                        ("Expected Values of Low-Fidelity Model", [p.line(line_color="seagreen")]),
-                                        ("Expected Values of Multi-Fidelity Model", [p.line(line_color="maroon")])
-                                       ], location = "center")
-    p.add_layout(legend, "right")
-    # bokeh.io.show(style(p))
-    p.background_fill_color = None
-    p.border_fill_color = None
-    p.toolbar.logo = None
-    p.toolbar_location = None
-    export_png(style(p), filename=filename)
+        p.quad(top=hhist, bottom=0, left=hedges[:-1], right=hedges[1:],
+                   fill_color="navy", line_color="navy", alpha=0.5)
+        p.quad(top=lhist, bottom=0, left=ledges[:-1], right=ledges[1:],
+                   fill_color="seagreen", line_color="seagreen", alpha=0.5)
+        p.quad(top=mfhist, bottom=0, left=mfedges[:-1], right=mfedges[1:],
+                   fill_color="maroon", line_color="maroon", alpha=0.5)
+        p.title.align = "center"
+        legend = bokeh.models.Legend(items=[("Expected Values of High-Fidelity Model", [p.line(line_color="navy")]),
+                                            ("Expected Values of Low-Fidelity Model", [p.line(line_color="seagreen")]),
+                                            ("Expected Values of Multi-Fidelity Model", [p.line(line_color="maroon")])
+                                           ], location = "center")
+        p.add_layout(legend, "right")
+        # bokeh.io.show(style(p))
+        p.background_fill_color = None
+        p.border_fill_color = None
+        p.toolbar.logo = None
+        p.toolbar_location = None
+        export_png(style(p), filename=filename)
+    except Exception as e:
+        print("Unable to use bokeh. Using matplotlib instead")
+        plt.stairs(hhist, hedges, fill=True, label='Expected Values of High-Fidelity Model')
+        plt.stairs(lhist, ledges, fill=True, label='Expected Values of Low-Fidelity Model')
+        plt.stairs(mfhist, mfedges, fill=True, label='Expected Values of Multi-Fidelity Model')
+        plt.title("Histogram of Different Fidelity Expected Values")
+        plt.xlabel("Expected Values")
+        plt.ylabel("Frequency")
+        plt.legend(loc='upper right')
+        plt.savefig(filename, bbox_inches='tight')
 
 if __name__ == "__main__":
     main()

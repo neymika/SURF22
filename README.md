@@ -2,6 +2,8 @@
  Summer Research
 
 ## Week 1
+  * 6/14: Got COVID :sob: :mask: :anger:... ON THE VERY FIRST DAY! Just my luck...
+  * 6/21: Still have COVID. :disappointed: :shit: :skull:
   * Worked on basic implementations of least squares solution for basic estimator in jupyter notebook and python script.
     * Requires the following package installations:
       * ```python
@@ -18,6 +20,11 @@
         pip3 install bokeh
         pip3 install selenium
         conda install -c conda-forge firefox geckodriver
+        ```
+    * (Week 2) Or can use the following package installations
+      * ```python
+        pip3 install numpy
+        pip3 install matplotlib
         ```
     * Initial parameter values are based on paper. To run the script either call
       * ```python
