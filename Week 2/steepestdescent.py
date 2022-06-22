@@ -48,79 +48,77 @@ def dffi(sig, j, lam=10e-2):
 
     return derivs
 
-def steepestdescent(f, df, x0, tau, alf0, mu1, mu2, sigma):
+def phi(f, xk, pk, a):
+    return f(xk+a*pk)
+
+def phipr(df, xk, pk, a):
+    return np.matmul(np.transpose(df(xk + a*pk)), pk)
+
+def backtracing(f, df, xk, pk, mu1, alf0, rho):
+    alf = alf0
+    ahist = alf0
+
+    for i in range(100):
+        if phi(f, xk, pk, alf) <= phi(f, xk, pk, 0) + mu1*alf*phipr(df, xk, pk, 0):
+            break
+        alf = rho*alf
+        ahist = np.append(ahist, alf)
+        if i == 99:
+            print('Backtracking exited without satsifying Armijo condition.')
+            return alf
+
+    return alf
+
+def steepestdescent(f, df, x0, tau, alf0, mu1, rho):
     k = 0
     xk = x0
     xhist = np.array([xk])
-    alfinit = alf0
-    ahist = alf0
-    alfk = [0]
+    ahist = f(xk)
+    alfk = alf0
     dk = df(xk)
-    pk = -dk/np.linalg.norm(dk)
-    phist = np.array([pk])
-    fhist = np.array([dk])
+    pk = -dk
     reset = False
     losses = np.array([np.linalg.norm(df(xk), ord=2)])
 
 
-    while np.linalg.norm(df(xk), ord=2) > tau:
+    while np.linalg.norm(df(xk), ord=2)/np.linalg.norm(xk, ord=2) > tau:
         if k != 0:
             dk = df(xk)
-            pk = -dk/np.linalg.norm(dk)
-#             print(np.matmul(np.transpose(fhist[k-1]), phist[k-1]))
-#             print(alfk)
-#             alfinit = alfk[0]*(np.matmul(np.transpose(fhist[k-1]), phist[k-1]))/(np.matmul(np.transpose(dk), pk))
-#             dphiinit = phipr(df, xk, pk, alfinit)
-            # DO LATER
-#             bk = (dfk(xko)*dfk(xko))/(dfk(xko)*dfk(xko))
-#             pkn = bk*pko - (j+1)*dfk(xko)/np.abs((j+1)*dfk(xko))
-#             pko = pkn
-#         it, alfk, alfhist = bracketing(f, df, xk, pk, mu1, alfinit, phi0, \
-#                                        dphi0, mu2, sigma)
-#             alfk = backtracing(f, df, xk, pk, mu1, alfinit, rho)
-        alfk = optimize.line_search(f, df, xk, pk, gfk=None, old_fval=None, old_old_fval=None, \
-                                    args=(), c1=mu1, c2=mu2, amax=sigma, extra_condition=None, maxiter=20)
-        if alfk[0] != None:
-            xk = xk + alfk[0]*pk
+            pk = -dk
+        alfk = backtracing(f, df, xk, pk, mu1, alfk, rho)
+        xk = xk + alfk*pk
 
-            xhist = np.append(xhist, [xk], axis=0)
-
-            ahist = np.append([alfk[0]], ahist)
-            reset = False
-        else:
-            alfk = [alf0*.001]
-            xk = xk + alfk[0]*pk
-
-            xhist = np.append(xhist, [xk], axis=0)
-
-            ahist = np.append([alfk[0]], ahist)
-            reset = True
-#             print("WHOOPS")
-#             print(alfk)
-
-        if k != 0:
-            phist = np.append(phist, [pk], axis=0)
-            fhist = np.append(fhist, [dk], axis=0)
-
-        losses = np.append(losses, [np.linalg.norm(df(xk), ord=2)])
+        xhist = np.append(xhist, [xk], axis=0)
+        ahist = np.append(ahist, [f(xk)])
+        losses = np.append(losses, [np.linalg.norm(df(xk), ord=2)/np.linalg.norm(xk, ord=2)])
 
         k += 1
-        if k == 500:
+        if k == 1100:
             print("Failed to converge")
             break
 
-    return xhist, losses
+    return xhist, losses, ahist
 
 def main():
     test_start_iter = timeit.default_timer()
-    sigmafound, siglosses = steepestdescent(jacob, dfjacob, np.ones(shape=(xi[1].shape[0]+1,)), 1e-5, 1, .0001, .9, 2)
+    initialguess = 2.25*np.ones(shape=(xi[1].shape[0]+1,))
+    sigmafound, siglosses, sigfuncs = steepestdescent(jacob, dfjacob, initialguess, .01, 1, 1e-5, .5)
     test_end_iter = timeit.default_timer()
     print(test_end_iter - test_start_iter )
 
-    testthetas = np.zeros(shape=(48,))
+    print("Steepest Descent Values")
+    print(sigmafound[-1])
+    print(sigfuncs[-1])
+    print(siglosses[-1])
 
-    for i in range(48):
-        testthetas[i] = np.linalg.norm(sigmafound[i], ord=2)*.01
+    xib = np.concatenate((xi, np.ones((xi.shape[0], 1))), 1)
+    d = np.matmul(np.transpose(xib), xib)+ 0.0001*np.identity(xib.shape[1])
+    theta_star =np.linalg.lstsq(d, np.matmul(np.transpose(xib), yi), rcond=None)
+    true_objective = jacob(theta_star[0])
+
+    print("A\\b Values")
+    print(theta_star[0])
+    print(true_objective)
 
 if __name__ == "__main__":
     main()
