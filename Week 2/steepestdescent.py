@@ -1,7 +1,28 @@
 import pandas as pd
 import numpy as np
-from scipy import optimize
 import timeit
+import matplotlib.pyplot as plt
+import bokeh.plotting
+from bokeh.io import output_notebook, export_png
+import sys
+plt.style.use('seaborn-white')
+# Set up basic style of bokeh plotting
+# output_notebook()
+def style(p, autohide=False):
+    p.title.text_font="Helvetica"
+    p.title.text_font_size="13px"
+    p.title.align="center"
+    p.xaxis.axis_label_text_font="Helvetica"
+    p.yaxis.axis_label_text_font="Helvetica"
+
+    p.xaxis.axis_label_text_font_size="13px"
+    p.yaxis.axis_label_text_font_size="13px"
+    p.xaxis.axis_label_text_font_style = "normal"
+    p.yaxis.axis_label_text_font_style = "normal"
+    p.background_fill_alpha = 0
+    if autohide: p.toolbar.autohide=True
+    return p
+
 
 normtable = pd.read_csv("data_normalized.csv", header=None)
 xi = np.array([normtable.iloc[0, 0:48]])
@@ -119,6 +140,30 @@ def main():
     print("A\\b Values")
     print(theta_star[0])
     print(true_objective)
+
+    try:
+        p = bokeh.plotting.figure(height=300, width=800, x_axis_label="Number of iterations", \
+                          y_axis_label="||∇J(θ)|| Values", title="||∇J(θ)|| vs. Number Iterations for GD", \
+                          y_axis_type="log")
+        p.line(range(0, siglosses.shape[0], 1), siglosses, line_color="navy")
+        p.xgrid.grid_line_color = None
+        p.ygrid.grid_line_color = None
+        p.title.align = "center"
+        p.background_fill_color = None
+        p.border_fill_color = None
+        p.toolbar.logo = None
+        p.toolbar_location = None
+        export_png(style(p), filename="gradient_descent_loss.png")
+    except Exception as e:
+        print("Unable to use bokeh. Using matplotlib instead")
+        fig = plt.figure()
+        ax = plt.gca()
+        ax.plot(range(0, siglosses.shape[0], 1), siglosses, '-o', markeredgecolor="none")
+        ax.set_yscale('log')
+        plt.title("||∇J(θ)|| vs. Number Iterations for GD")
+        plt.xlabel("Number of iterations")
+        plt.ylabel("||∇J(θ)|| Values")
+        plt.savefig("gradient_descent_loss.png", bbox_inches='tight')
 
 if __name__ == "__main__":
     main()

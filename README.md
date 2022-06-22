@@ -36,5 +36,29 @@
 
 ## :weary: Week 2
   * 6/21: Still have COVID. :disappointed: :shit: :skull:
+  * 6/22: NO LONGER HAVE COVID!!! :satisfied: :sunglasses: :dizzy:
   * Bokeh is a problem child sometimes, so in case of any issues, can just run the same code the same way but make sure matplotlib is at least installed.
-  * Made a quick script of the steepest descent code. Will make clean and debug.
+  * Made a quick script of the steepest descent code. ~~Will make clean and debug.~~
+  * Debugged steepest descent code. Still takes much longer compared to mentor's version (140 iterations vs. 1017 iterations), but trend is linear. Starting points are different so that could be a possible reason.
+  * Basic implementation of steepest descent with backtracking using a homework problem dataset. Have a few questions however.
+    * Where do we ever introduce ridge regression in the GD problem? In mentor's code it is only ever introduced in the least squares solution.
+    * Mentor and my original function and derivates are different. Should ask why.
+    * Mentor's code always starts with initial alpha instead of updated alpha. Why?
+    * Requires the following package installations
+      * ```python
+        pip3 install numpy
+        pip3 install pandas
+        pip3 install bokeh
+        pip3 install selenium
+        conda install -c conda-forge firefox geckodriver
+        ```
+    * Or can use the following package installations
+      * ```python
+        pip3 install numpy
+        pip3 install pandas
+        pip3 install matplotlib
+        ```
+    * To run file:
+      * ```python
+        python3 steepestdescent.py
+        ```
