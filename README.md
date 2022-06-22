@@ -74,3 +74,9 @@
       * ```python
         python3 sgd.py
         ```
+  * Basic implementation of SGD with minibatch 20 for toy dataset where y = .5*x + 2 + $\epsilon$.
+    * Requires the same package installations as above.
+    * To run file:
+      * ```python
+        python3 toysgd.py
+        ```
