@@ -25,7 +25,7 @@ def style(p, autohide=False):
 
 xi = np.random.normal(0.0, 1.0, size=(1000, 20))
 truebetas = .5*np.ones(shape=(20,))
-trueyis = np.matmul(truebetas, np.transpose(xi))
+trueyis = np.matmul(truebetas, np.transpose(xi)) + 2
 yi = trueyis + np.random.normal(0.0, .01, size=(1000,))
 
 def jacob(sig, lam=10e-2):
