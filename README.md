@@ -35,8 +35,10 @@
         ```
 
 ## :weary: Week 2
-  * 6/21: Still have COVID. :disappointed: :shit: :skull:
-  * 6/22: NO LONGER HAVE COVID!!! :satisfied: :sunglasses: :dizzy:
+  * 6/21: Still have COVID. :disappointed:
+  * :shit: :skull:
+  * 6/22: NO LONGER HAVE COVID!!! :satisfied:
+  * :sunglasses: :dizzy:
   * Bokeh is a problem child sometimes, so in case of any issues, can just run the same code the same way but make sure matplotlib is at least installed.
   * Made a quick script of the steepest descent code. ~~Will make clean and debug.~~
   * Debugged steepest descent code. Still takes much longer compared to mentor's version (140 iterations vs. 1017 iterations), but trend is linear. Starting points are different so that could be a possible reason.
