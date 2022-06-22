@@ -150,8 +150,8 @@ def main():
         p.toolbar_location = None
         export_png(style(p), filename="sgd_func.png")
 
-        p = bokeh.plotting.figure(height=300, width=800, x_axis_label="Number of iterations", \
-                          y_axis_label="||∇J(θ)|| Values", title="||∇J(θ)|| vs. Number Iterations for SGD", \
+        p = bokeh.plotting.figure(height=300, width=800, x_axis_label="Major Epochs", \
+                          y_axis_label="||∇J(θ)|| Values", title="||∇J(θ)|| vs. Major Epochs for SGD", \
                           y_axis_type="log")
         p.line(range(0, sigolosses.shape[0], 1), sigolosses, line_color="navy")
         p.xgrid.grid_line_color = None
@@ -163,8 +163,8 @@ def main():
         p.toolbar_location = None
         export_png(style(p), filename="sgd_olosses.png")
 
-        p = bokeh.plotting.figure(height=300, width=800, x_axis_label="Number of iterations", \
-                          y_axis_label="||Δθ|| Values", title="||Δθ|| vs. Number Iterations for SGD", \
+        p = bokeh.plotting.figure(height=300, width=800, x_axis_label="Major Epochs", \
+                          y_axis_label="||Δθ|| Values", title="||Δθ|| vs. Major Epochs for SGD", \
                           y_axis_type="log")
         p.line(range(0, siglosses.shape[0], 1), siglosses, line_color="navy")
         p.xgrid.grid_line_color = None
@@ -181,8 +181,8 @@ def main():
         ax = plt.gca()
         ax.plot(range(0, sigolosses.shape[0], 1), sigolosses, '-o', markeredgecolor="none")
         ax.set_yscale('log')
-        plt.title("||∇J(θ)|| vs. Number Iterations for SGD")
-        plt.xlabel("Number of iterations")
+        plt.title("||∇J(θ)|| vs. Major Epochs for SGD")
+        plt.xlabel("Major Epochs")
         plt.ylabel("||∇J(θ)|| Values")
         plt.savefig("sgd_oloss.png", bbox_inches='tight')
 
@@ -190,8 +190,8 @@ def main():
         ax = plt.gca()
         ax.plot(range(0, sigolosses.shape[0], 1), sigolosses, '-o', markeredgecolor="none")
         ax.set_yscale('log')
-        plt.title("||Δθ|| vs. Number Iterations for SGD")
-        plt.xlabel("Number of iterations")
+        plt.title("||Δθ|| vs. Major Epochs for SGD")
+        plt.xlabel("Major Epochs")
         plt.ylabel("||Δθ|| Values")
         plt.savefig("sgd_loss.png", bbox_inches='tight')
 
@@ -199,8 +199,8 @@ def main():
         ax = plt.gca()
         ax.plot(range(0, sigfuncs.shape[0], 1), sigfuncs, '-o', markeredgecolor="none")
         ax.set_yscale('log')
-        plt.title("J(θ) vs. Number Iterations for SGD")
-        plt.xlabel("Number of iterations")
+        plt.title("J(θ) vs. Major Epochs for SGD")
+        plt.xlabel("Major Epochs")
         plt.ylabel("J(θ) Values")
         plt.savefig("sgd_func.png", bbox_inches='tight')
 
