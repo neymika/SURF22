@@ -51,21 +51,6 @@ def dfjacob(sig, lam=10e-2):
 
     return derivs/xi.shape[0]
 
-def fi(sig, i, lam=10e-2):
-    c = lam*np.matmul(np.transpose(sig), sig)
-    sumi = c + (np.matmul(np.transpose(sig), np.append(xi[i], 1)) - yi[i])**2
-
-    return sumi/2
-
-def dffi(sig, j, lam=10e-2):
-    derivs = np.zeros(shape=(sig.shape[0],))
-    largei = np.append(xi[j], 1)
-    derivs = np.matmul(np.transpose(sig), largei)*largei - yi[j]*largei
-
-    derivs += lam*np.transpose(sig)
-
-    return derivs
-
 def phi(f, xk, pk, a):
     return f(xk+a*pk)
 
@@ -95,7 +80,6 @@ def steepestdescent(f, df, x0, tau, alf0, mu1, rho):
     alfk = alf0
     dk = df(xk)
     pk = -dk
-    reset = False
     losses = np.array([np.linalg.norm(df(xk), ord=2)])
 
 
