@@ -54,63 +54,76 @@ def dfjacob(sig, lam=10e-2):
 
     return derivs/xi.shape[0]
 
-def phi(f, xk, pk, a):
-    return f(xk+a*pk)
+def fi(sig, i, lam=10e-2):
+    c = lam*np.matmul(np.transpose(sig), sig)
+    sumi = c + (np.matmul(np.transpose(sig), np.append(xi[i], 1)) - yi[i])**2
 
-def phipr(df, xk, pk, a):
-    return np.matmul(np.transpose(df(xk + a*pk)), pk)
+    return sumi/2
 
-def backtracing(f, df, xk, pk, mu1, alf0, rho):
-    alf = alf0
-    ahist = alf0
+def dffi(sig, j, lam=10e-2):
+    derivs = np.zeros(shape=(sig.shape[0],))
+    largei = np.append(xi[j], 1)
+    derivs = np.matmul(np.transpose(sig), largei)*largei - yi[j]*largei
 
-    for i in range(100):
-        if phi(f, xk, pk, alf) <= phi(f, xk, pk, 0) + mu1*alf*phipr(df, xk, pk, 0):
-            break
-        alf = rho*alf
-        ahist = np.append(ahist, alf)
-        if i == 99:
-            print('Backtracking exited without satsifying Armijo condition.')
-            return alf
+    derivs += lam*np.transpose(sig)
 
-    return alf
+    return derivs
 
-def steepestdescent(f, df, x0, tau, alf0, mu1, rho):
+def sgdescent(f, df, x0, etait, epochs=1000, miter=50):
     k = 0
+    xog = x0
     xk = x0
     xhist = np.array([xk])
-    ahist = f(xk)
-    alfk = alf0
-    dk = df(xk)
-    pk = -dk
-    losses = np.array([np.linalg.norm(df(xk), ord=2)])
+    reset = False
+    change = x0+1
+    losses = np.array([np.linalg.norm(change-1, ord=2)])
+    np.random.seed(2022)
+    chosen = np.random.choice(xi.shape[0])
+    ahist = np.array([jacob(xk)])
+    olosses = np.array([np.linalg.norm(dfjacob(xk), ord=2)/np.linalg.norm(xk, ord=2)])
 
-    while np.linalg.norm(df(xk), ord=2)/np.linalg.norm(xk, ord=2) > tau:
-        if k != 0:
-            dk = df(xk)
-            pk = -dk
-        alfk = backtracing(f, df, xk, pk, mu1, alfk, rho)
-        xk = xk + alfk*pk
+
+    while np.linalg.norm(dfjacob(xk), ord=2)/np.linalg.norm(xk, ord=2) > .01:
+        change = np.copy(xk)
+        xog = np.copy(xk)
+
+        if k >= 3:
+            alfk = etait(k)
+        else:
+            alfk = 1/(k+3)
+
+        for m in range(miter):
+            chosen = np.random.choice(xi.shape[0])
+            xk -= alfk*df(xk, chosen)/miter
 
         xhist = np.append(xhist, [xk], axis=0)
-        ahist = np.append(ahist, [f(xk)])
-        losses = np.append(losses, [np.linalg.norm(df(xk), ord=2)/np.linalg.norm(xk, ord=2)])
+        losses = np.append(losses, [np.linalg.norm(change - xk, ord=2) / np.linalg.norm(xk, ord=2)])
+        olosses = np.append(olosses, [np.linalg.norm(dfjacob(xk), ord=2)/np.linalg.norm(xk, ord=2)])
+        ahist = np.append(ahist, [jacob(xk)])
+
+        change -= xk
 
         k += 1
-        if k == 1100:
+        if k == epochs:
             print("Failed to converge")
             break
 
-    return xhist, losses, ahist
+    return xhist, losses, ahist, olosses
+
+def firsteta(it):
+    return 1/it
+
+def secondeta(it):
+    return 1/np.sqrt(it)
 
 def main():
     test_start_iter = timeit.default_timer()
     initialguess = 2.25*np.ones(shape=(xi[1].shape[0]+1,))
-    sigmafound, siglosses, sigfuncs = steepestdescent(jacob, dfjacob, initialguess, .01, 1, 1e-5, .5)
+    sigmafound, siglosses, sigfuncs, sigolosses = sgdescent(fi, dffi, initialguess, firsteta, epochs=5000, miter=20)
     test_end_iter = timeit.default_timer()
     print(test_end_iter - test_start_iter )
 
-    print("Steepest Descent Values")
+    print("Stochastic Gradient Descent Values")
     print(sigmafound[-1])
     print(sigfuncs[-1])
     print(siglosses[-1])
@@ -126,20 +139,7 @@ def main():
 
     try:
         p = bokeh.plotting.figure(height=300, width=800, x_axis_label="Number of iterations", \
-                          y_axis_label="||∇J(θ)|| Values", title="||∇J(θ)|| vs. Number Iterations for GD", \
-                          y_axis_type="log")
-        p.line(range(0, siglosses.shape[0], 1), siglosses, line_color="navy")
-        p.xgrid.grid_line_color = None
-        p.ygrid.grid_line_color = None
-        p.title.align = "center"
-        p.background_fill_color = None
-        p.border_fill_color = None
-        p.toolbar.logo = None
-        p.toolbar_location = None
-        export_png(style(p), filename="gradient_descent_loss.png")
-
-        p = bokeh.plotting.figure(height=300, width=800, x_axis_label="Number of iterations", \
-                          y_axis_label="J(θ) Values", title="J(θ) vs. Number Iterations for GD", \
+                          y_axis_label="J(θ) Values", title="J(θ) vs. Number Iterations for SGD", \
                           y_axis_type="log")
         p.line(range(0, sigfuncs.shape[0], 1), sigfuncs, line_color="navy")
         p.xgrid.grid_line_color = None
@@ -149,7 +149,33 @@ def main():
         p.border_fill_color = None
         p.toolbar.logo = None
         p.toolbar_location = None
-        export_png(style(p), filename="gradient_descent_func.png")
+        export_png(style(p), filename="sgd_func.png")
+
+        p = bokeh.plotting.figure(height=300, width=800, x_axis_label="Number of iterations", \
+                          y_axis_label="||∇J(θ)|| Values", title="||∇J(θ)|| vs. Number Iterations for SGD", \
+                          y_axis_type="log")
+        p.line(range(0, sigolosses.shape[0], 1), sigolosses, line_color="navy")
+        p.xgrid.grid_line_color = None
+        p.ygrid.grid_line_color = None
+        p.title.align = "center"
+        p.background_fill_color = None
+        p.border_fill_color = None
+        p.toolbar.logo = None
+        p.toolbar_location = None
+        export_png(style(p), filename="sgd_olosses.png")
+
+        p = bokeh.plotting.figure(height=300, width=800, x_axis_label="Number of iterations", \
+                          y_axis_label="||Δθ|| Values", title="||Δθ|| vs. Number Iterations for SGD", \
+                          y_axis_type="log")
+        p.line(range(0, siglosses.shape[0], 1), siglosses, line_color="navy")
+        p.xgrid.grid_line_color = None
+        p.ygrid.grid_line_color = None
+        p.title.align = "center"
+        p.background_fill_color = None
+        p.border_fill_color = None
+        p.toolbar.logo = None
+        p.toolbar_location = None
+        export_png(style(p), filename="sgd_loss.png")
     except Exception as e:
         print("Unable to use bokeh. Using matplotlib instead")
         fig = plt.figure()
@@ -159,7 +185,7 @@ def main():
         plt.title("||∇J(θ)|| vs. Number Iterations for GD")
         plt.xlabel("Number of iterations")
         plt.ylabel("||∇J(θ)|| Values")
-        plt.savefig("gradient_descent_loss.png", bbox_inches='tight')
+        plt.savefig("sgd_loss.png", bbox_inches='tight')
 
 if __name__ == "__main__":
     main()

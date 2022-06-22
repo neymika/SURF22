@@ -63,21 +63,14 @@
         python3 steepestdescent.py
         ```
   * Basic implementation of steepest descent with backtracking using a toy dataset where y = .5*x + 2 + $\epsilon$
-  * Requires the following package installations
-    * ```python
-      pip3 install numpy
-      pip3 install pandas
-      pip3 install bokeh
-      pip3 install selenium
-      conda install -c conda-forge firefox geckodriver
-      ```
-  * Or can use the following package installations
-    * ```python
-      pip3 install numpy
-      pip3 install pandas
-      pip3 install matplotlib
-      ```
-  * To run file:
-    * ```python
-      python3 toysteepestdescent.py
-      ```
+    * Requires the same package installations as above.
+    * To run file:
+      * ```python
+        python3 toysteepestdescent.py
+        ```
+  * Basic implementation of SGD with minibatch 20 for homework problem dataset.
+    * Requires the same package installations as above.
+    * To run file:
+      * ```python
+        python3 sgd.py
+        ```
