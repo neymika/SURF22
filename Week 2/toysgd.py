@@ -24,12 +24,10 @@ def style(p, autohide=False):
     return p
 
 
-normtable = pd.read_csv("data_normalized.csv", header=None)
-xi = np.array([normtable.iloc[0, 0:48]])
-yi = np.array([normtable.iloc[0, 48]])
-for i in range(1, 200):
-    xi = np.append(xi, [normtable.iloc[i, 0:48]], axis=0)
-    yi = np.append(yi, [normtable.iloc[i, 48]], axis=0)
+xi = np.random.normal(0.0, 1.0, size=(1000, 20))
+truebetas = .5*np.ones(shape=(20,))
+trueyis = np.matmul(truebetas, np.transpose(xi)) + 2
+yi = trueyis + np.random.normal(0.0, .01, size=(1000,))
 
 def jacob(sig, lam=10e-2):
     c = (lam/2)*np.matmul(np.transpose(sig), sig)
@@ -149,7 +147,7 @@ def main():
         p.border_fill_color = None
         p.toolbar.logo = None
         p.toolbar_location = None
-        export_png(style(p), filename="sgd_func.png")
+        export_png(style(p), filename="toysgd_func.png")
 
         p = bokeh.plotting.figure(height=300, width=800, x_axis_label="Number of iterations", \
                           y_axis_label="||∇J(θ)|| Values", title="||∇J(θ)|| vs. Number Iterations for SGD", \
@@ -162,7 +160,7 @@ def main():
         p.border_fill_color = None
         p.toolbar.logo = None
         p.toolbar_location = None
-        export_png(style(p), filename="sgd_olosses.png")
+        export_png(style(p), filename="toysgd_olosses.png")
 
         p = bokeh.plotting.figure(height=300, width=800, x_axis_label="Number of iterations", \
                           y_axis_label="||Δθ|| Values", title="||Δθ|| vs. Number Iterations for SGD", \
@@ -175,7 +173,7 @@ def main():
         p.border_fill_color = None
         p.toolbar.logo = None
         p.toolbar_location = None
-        export_png(style(p), filename="sgd_loss.png")
+        export_png(style(p), filename="toysgd_loss.png")
     except Exception as e:
         print("Unable to use bokeh. Using matplotlib instead")
         fig = plt.figure()
