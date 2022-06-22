@@ -161,5 +161,14 @@ def main():
         plt.ylabel("||∇J(θ)|| Values")
         plt.savefig("gradient_descent_loss.png", bbox_inches='tight')
 
+        fig = plt.figure()
+        ax = plt.gca()
+        ax.plot(range(0, sigfuncs.shape[0], 1), sigfuncs, '-o', markeredgecolor="none")
+        ax.set_yscale('log')
+        plt.title("J(θ) vs. Number Iterations for GD")
+        plt.xlabel("Number of iterations")
+        plt.ylabel("J(θ) Values")
+        plt.savefig("gradient_descent_func.png", bbox_inches='tight')
+
 if __name__ == "__main__":
     main()
