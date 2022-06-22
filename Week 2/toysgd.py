@@ -72,7 +72,6 @@ def sgdescent(f, df, x0, etait, epochs=1000, miter=50):
     xog = x0
     xk = x0
     xhist = np.array([xk])
-    reset = False
     change = x0+1
     losses = np.array([np.linalg.norm(change-1, ord=2)])
     np.random.seed(2022)
