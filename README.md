@@ -37,6 +37,7 @@
 ## :weary: Week 2
 :disappointed: :shit: :skull:
   * 6/21: Still have COVID.
+  
 :satisfied: :sunglasses: :dizzy:
   * 6/22: NO LONGER HAVE COVID!!!
   * Bokeh is a problem child sometimes, so in case of any issues, can just run the same code the same way but make sure matplotlib is at least installed.
