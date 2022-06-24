@@ -37,16 +37,19 @@
 ## :weary: Week 2
 :disappointed: :shit: :skull:
   * 6/21: Still have COVID.
-  
+
 :satisfied: :sunglasses: :dizzy:
   * 6/22: NO LONGER HAVE COVID!!!
   * Bokeh is a problem child sometimes, so in case of any issues, can just run the same code the same way but make sure matplotlib is at least installed.
   * Made a quick script of the steepest descent code. ~~Will make clean and debug.~~
   * Debugged steepest descent code. Still takes much longer compared to mentor's version (140 iterations vs. 1017 iterations), but trend is linear. Starting points are different so that could be a possible reason.
   * Basic implementation of steepest descent with backtracking using a homework problem dataset. Have a few questions however.
-    * Where do we ever introduce ridge regression in the GD problem? In mentor's code it is only ever introduced in the least squares solution.
-    * Mentor and my original function and derivates are different. Should ask why.
-    * Mentor's code always starts with initial alpha instead of updated alpha. Why?
+    * ~~Where do we ever introduce ridge regression in the GD problem? In mentor's code it is only ever introduced in the least squares solution.~~
+      * Unnecessary in the GD case apparently.
+    * ~~Mentor and my original function and derivates are different. Should ask why.~~
+      * They are not different! Yet they are producing different results, so must be debugged.
+    * ~~Mentor's code always starts with initial alpha instead of updated alpha. Why?~~
+      * Did not really answer, but I imagine its to ensure that the search direction condition is met everytime?
     * Requires the following package installations
       * ```python
         pip3 install numpy
@@ -83,3 +86,4 @@
       * ```python
         python3 toysgd.py
         ```
+  * Fixed and cleaned up non-toy steepest descent and SGD files. Issue was lambda value.

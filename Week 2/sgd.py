@@ -31,41 +31,31 @@ for i in range(1, 200):
     xi = np.append(xi, [normtable.iloc[i, 0:48]], axis=0)
     yi = np.append(yi, [normtable.iloc[i, 48]], axis=0)
 
-def jacob(sig, lam=10e-2):
-    c = (lam/2)*np.matmul(np.transpose(sig), sig)
-    sumi = c
-    netsum = 0
-
-    for i in range(xi.shape[0]):
-        ho = np.matmul(np.transpose(sig), np.append(xi[i], 1))
-        netsum += (ho - yi[i])**2
-    sumi += netsum/(2*xi.shape[0])
+def jacob(sig, lam=1e-4):
+    sumi = (lam/2)*(sig.T @ sig)
+    xi_til = np.hstack((xi, np.ones((xi.shape[0],1))))
+    netsum = np.mean((xi_til @ sig - yi)**2)/2
+    sumi += netsum
 
     return sumi
 
-def dfjacob(sig, lam=10e-2):
-    derivs = np.zeros(shape=(sig.shape[0],))
+def dfjacob(sig, lam=1e-4):
+    xi_til = np.hstack((xi, np.ones((xi.shape[0],1))))
+    derivs  = (xi_til @ sig - yi) @ xi_til
 
-    for j in range(xi.shape[0]):
-        largei = np.append(xi[j], 1)
-        derivs += np.matmul(np.transpose(sig), largei)*largei - yi[j]*largei
-
-    derivs += lam*np.transpose(sig)
+    derivs += lam * sig.T
 
     return derivs/xi.shape[0]
 
-def fi(sig, i, lam=10e-2):
-    c = lam*np.matmul(np.transpose(sig), sig)
-    sumi = c + (np.matmul(np.transpose(sig), np.append(xi[i], 1)) - yi[i])**2
+def fi(sig, i, lam=1e-4):
+    sumi = lam*(sig.T @ sig) + ((sig.T @ np.append(xi[i], 1)) - yi[i])**2
 
     return sumi/2
 
-def dffi(sig, j, lam=10e-2):
-    derivs = np.zeros(shape=(sig.shape[0],))
+def dffi(sig, j, lam=1e-4):
     largei = np.append(xi[j], 1)
-    derivs = np.matmul(np.transpose(sig), largei)*largei - yi[j]*largei
-
-    derivs += lam*np.transpose(sig)
+    derivs = (sig.T @ largei - yi[j])*largei
+    derivs += lam * sig.T
 
     return derivs
 
@@ -77,7 +67,6 @@ def sgdescent(f, df, x0, etait, epochs=1000, miter=50):
     change = x0+1
     losses = np.array([np.linalg.norm(change-1, ord=2)])
     np.random.seed(2022)
-    chosen = np.random.choice(xi.shape[0])
     ahist = np.array([jacob(xk)])
     olosses = np.array([np.linalg.norm(dfjacob(xk), ord=2)/np.linalg.norm(xk, ord=2)])
 
@@ -91,9 +80,9 @@ def sgdescent(f, df, x0, etait, epochs=1000, miter=50):
         else:
             alfk = 1/(k+3)
 
+        chosen = np.random.choice(xi.shape[0], miter, replace=False)
         for m in range(miter):
-            chosen = np.random.choice(xi.shape[0])
-            xk -= alfk*df(xk, chosen)/miter
+            xk -= alfk*df(xk, chosen[m])/miter
 
         xhist = np.append(xhist, [xk], axis=0)
         losses = np.append(losses, [np.linalg.norm(change - xk, ord=2) / np.linalg.norm(xk, ord=2)])
@@ -118,7 +107,7 @@ def secondeta(it):
 def main():
     test_start_iter = timeit.default_timer()
     initialguess = 2.25*np.ones(shape=(xi[1].shape[0]+1,))
-    sigmafound, siglosses, sigfuncs, sigolosses = sgdescent(fi, dffi, initialguess, firsteta, epochs=1000, miter=20)
+    sigmafound, siglosses, sigfuncs, sigolosses = sgdescent(fi, dffi, initialguess, firsteta, epochs=5000, miter=20)
     test_end_iter = timeit.default_timer()
     print(test_end_iter - test_start_iter )
 
@@ -128,8 +117,8 @@ def main():
     print(siglosses[-1])
 
     xib = np.concatenate((xi, np.ones((xi.shape[0], 1))), 1)
-    d = np.matmul(np.transpose(xib), xib)+ 0.0001*np.identity(xib.shape[1])
-    theta_star =np.linalg.lstsq(d, np.matmul(np.transpose(xib), yi), rcond=None)
+    d = (xib.T @ xib)+ 0.0001*np.identity(xib.shape[1])
+    theta_star = np.linalg.lstsq(d, xib.T @ yi, rcond=None)
     true_objective = jacob(theta_star[0])
 
     print("A\\b Values")
