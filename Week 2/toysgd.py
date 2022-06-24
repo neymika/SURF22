@@ -59,29 +59,26 @@ def dffi(sig, j, lam=1e-4):
 
 def sgdescent(f, df, x0, etait, epochs=1000, miter=50):
     k = 0
-    xog = x0
     xk = x0
     xhist = np.array([xk])
     change = x0+1
     losses = np.array([np.linalg.norm(change-1, ord=2)])
     np.random.seed(2022)
-    chosen = np.random.choice(xi.shape[0])
     ahist = np.array([jacob(xk)])
     olosses = np.array([np.linalg.norm(dfjacob(xk), ord=2)/np.linalg.norm(xk, ord=2)])
 
 
-    while np.linalg.norm(dfjacob(xk), ord=2)/np.linalg.norm(xk, ord=2) > .01:
+    while losses[-1] > .01:
         change = np.copy(xk)
-        xog = np.copy(xk)
 
         if k >= 3:
             alfk = etait(k)
         else:
             alfk = 1/(k+3)
 
+        chosen = np.random.choice(xi.shape[0], miter, replace=False)
         for m in range(miter):
-            chosen = np.random.choice(xi.shape[0])
-            xk -= alfk*df(xk, chosen)/miter
+            xk -= alfk*df(xk, chosen[m])/miter
 
         xhist = np.append(xhist, [xk], axis=0)
         losses = np.append(losses, [np.linalg.norm(change - xk, ord=2) / np.linalg.norm(xk, ord=2)])

@@ -61,7 +61,6 @@ def dffi(sig, j, lam=1e-4):
 
 def sgdescent(f, df, x0, etait, epochs=1000, miter=50):
     k = 0
-    xog = x0
     xk = x0
     xhist = np.array([xk])
     change = x0+1
@@ -73,7 +72,6 @@ def sgdescent(f, df, x0, etait, epochs=1000, miter=50):
 
     while np.linalg.norm(dfjacob(xk), ord=2)/np.linalg.norm(xk, ord=2) > .01:
         change = np.copy(xk)
-        xog = np.copy(xk)
 
         if k >= 3:
             alfk = etait(k)

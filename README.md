@@ -87,3 +87,9 @@
         python3 toysgd.py
         ```
   * Fixed and cleaned up non-toy steepest descent and SGD files. Issue was lambda value.
+  * Comparison of SGD and GD with varying minibatch sizes for toy dataset example where y = .5*x + 2 + $\epsilon$.
+    * Requires the same package installations as above.
+    * To run file:
+      * ```python
+        python3 toy.py
+        ```
