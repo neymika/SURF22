@@ -238,7 +238,7 @@ def main():
         p.legend.title_text_font_size = '10px'
         p.legend.label_text_font_size = '10px'
         p.legend.background_fill_alpha = 0.2
-        export_png(style(p), filename="toy_olosses.png")
+        export_png(style(p), filename="toy_oloss.png")
 
         p = bokeh.plotting.figure(height=300, width=800, x_axis_label="Major Epochs (# of ∇Ψ(θ)/m)", \
                           y_axis_label="||Δθ|| Values", title="||Δθ|| vs. Major Epochs", \
@@ -269,30 +269,54 @@ def main():
         print("Unable to use bokeh. Using matplotlib instead")
         fig = plt.figure()
         ax = plt.gca()
-        ax.plot(range(0, sigolosses.shape[0], 1), sigolosses, '-o', markeredgecolor="none")
+        for mini in minibatches:
+            gradn = int(1000/mini)
+            sizes = histsigfuncs[mini].shape[0]
+            ax.plot(np.linspace(start=1, stop=1+(sizes/gradn), num=sizes), \
+            histsigfuncs[mini], '-.', markeredgecolor="none",  \
+            label=f'SGD with minibatch size = {mini}')
+        ax.plot(range(1, 1+gdsigfuncs.shape[0], 1), gdsigfuncs, '-.', markeredgecolor="none", \
+        label=f'Gradient Descent')
         ax.set_yscale('log')
-        plt.title("||∇J(θ)|| vs. Major Epochs for SGD")
-        plt.xlabel("Major Epochs")
-        plt.ylabel("||∇J(θ)|| Values")
-        plt.savefig("toysgd_oloss.png", bbox_inches='tight')
+        plt.title("J(θ) vs. Major Epochs")
+        plt.xlabel(r"Major Epochs (# of $\nabla$Ψ(θ)/m)")
+        plt.ylabel(r"J(θ) Values")
+        plt.legend(bbox_to_anchor=(1,1.25), loc='upper left', ncol=1, title="Optimization Methods")
+        plt.savefig("toy_func.png", bbox_inches='tight')
 
         fig = plt.figure()
         ax = plt.gca()
-        ax.plot(range(0, sigolosses.shape[0], 1), sigolosses, '-o', markeredgecolor="none")
+        for mini in minibatches:
+            gradn = int(1000/mini)
+            sizes = histsiglosses[mini].shape[0]
+            ax.plot(np.linspace(start=1, stop=1+(sizes/gradn), num=sizes), \
+            histsiglosses[mini], '-.', markeredgecolor="none",  \
+            label=f'SGD with minibatch size = {mini}')
+        ax.plot(range(1, 1+gdsiglosses.shape[0], 1), gdsiglosses, '-.', markeredgecolor="none", \
+        label=f'Gradient Descent')
         ax.set_yscale('log')
-        plt.title("||Δθ|| vs. Major Epochs for SGD")
-        plt.xlabel("Major Epochs")
-        plt.ylabel("||Δθ|| Values")
-        plt.savefig("toysgd_loss.png", bbox_inches='tight')
+        plt.title("||Δθ|| vs. Major Epochs")
+        plt.xlabel(r"Major Epochs (# of $\nabla$Ψ(θ)/m)")
+        plt.ylabel(r"||Δθ|| Values")
+        plt.legend(bbox_to_anchor=(1,1.25), loc='upper left', ncol=1, title="Optimization Methods")
+        plt.savefig("toy_loss.png", bbox_inches='tight')
 
         fig = plt.figure()
         ax = plt.gca()
-        ax.plot(range(0, sigfuncs.shape[0], 1), sigfuncs, '-o', markeredgecolor="none")
+        for mini in minibatches:
+            gradn = int(1000/mini)
+            sizes = histsigolosses[mini].shape[0]
+            ax.plot(np.linspace(start=1, stop=1+(sizes/gradn), num=sizes), \
+            histsigolosses[mini], '-.', markeredgecolor="none",  \
+            label=f'SGD with minibatch size = {mini}')
+        ax.plot(range(1, 1+gdsigolosses.shape[0], 1), gdsigolosses, '-.', markeredgecolor="none", \
+        label=f'Gradient Descent')
         ax.set_yscale('log')
-        plt.title("J(θ) vs. Major Epochs for SGD")
-        plt.xlabel("Major Epochs")
-        plt.ylabel("J(θ) Values")
-        plt.savefig("toysgd_func.png", bbox_inches='tight')
+        plt.title(r"||$\nabla$J(θ)|| vs. Major Epochs")
+        plt.xlabel(r"Major Epochs (# of $\nabla$Ψ(θ)/m)")
+        plt.ylabel(r"||$\nabla$J(θ)|| Values")
+        plt.legend(bbox_to_anchor=(1,1.25), loc='upper left', ncol=1, title="Optimization Methods")
+        plt.savefig("toy_oloss.png", bbox_inches='tight')
 
 if __name__ == "__main__":
     main()
