@@ -1,6 +1,16 @@
 # SURF22
  Summer Research
 
+## Note from Week 3!!
+  * Please copy the absolute path to the SURF22 project location and run the following command in order to ensure all scripts work as intended:
+    * ```python
+      export PYTHONPATH="${PYTHONPATH}:path/to/SURF22"
+      ```
+    * For example, on my Mac I used the following command:
+    * ```python
+      export PYTHONPATH="${PYTHONPATH}:/Users/neymikajain/Desktop/SURF22/"
+      ```
+
 ## :worried: Week 1
   * 6/14: Got COVID :sob: :mask: :anger:... ON THE VERY FIRST DAY! Just my luck...
   * Worked on basic implementations of least squares solution for basic estimator in jupyter notebook and python script.
@@ -93,3 +103,18 @@
       * ```python
         python3 toy.py
         ```
+  ## :anger: :speak_no_evil: Week 3
+  * Changed convergence criteria for SD back to grad J... Resulted in SD never converging for small tau of 1e-6. Changed back to delta theta criteria instead to match SGD.
+  * :white_check_mark: Keep the same criteria for sgd. Further cleaned up the code such that a single data set could be used across the board. Made SGD parallel to reduce the time taken for code to run.
+  * Made tau even smaller (1e-6!). Saw some interesting results that I want to ask Pan about the next time we meet.
+  * Added SVRG implementation script. Is not really working as I think it should. Going to debug.
+  * Comparison of SGD and GD with varying minibatch sizes for unknown homework dataset example.
+    * Requires the same package installations as above. Also requires the following package AND THE PATH ADDITION AT THE TOP OF THE README
+      * ```python
+        pip3 install ray
+        ```
+    * To run file:
+      * ```python
+        python3 unknown.py
+        ```
+  * Write a report very carefully with definitions by Thursday 2AM
