@@ -23,7 +23,7 @@ def style(p, autohide=False):
     if autohide: p.toolbar.autohide=True
     return p
 
-def jacob(sig, xi, yi, lam=1e-4):
+def loss(sig, xi, yi, lam=1e-4):
     sumi = (lam/2)*(sig.T @ sig)
     xi_til = np.hstack((xi, np.ones((xi.shape[0],1))))
     netsum = np.mean((xi_til @ sig - yi)**2)/2
@@ -31,7 +31,7 @@ def jacob(sig, xi, yi, lam=1e-4):
 
     return sumi
 
-def dfjacob(sig, xi, yi, lam=1e-4):
+def dfloss(sig, xi, yi, lam=1e-4):
     xi_til = np.hstack((xi, np.ones((xi.shape[0],1))))
     derivs  = (xi_til @ sig - yi) @ xi_til
 
@@ -98,7 +98,7 @@ def main():
     xi, yi = data_table()
     test_start_iter = timeit.default_timer()
     initialguess = 2.25*np.ones(shape=(xi[1].shape[0]+1,))
-    sigmafound, sigolosses, sigfuncs, siglosses = steepestdescent(jacob, dfjacob, initialguess, .01, 1, 1e-5, .5)
+    sigmafound, sigolosses, sigfuncs, siglosses = steepestdescent(loss, dfloss, initialguess, .01, 1, 1e-5, .5)
     test_end_iter = timeit.default_timer()
     print(test_end_iter - test_start_iter )
 
@@ -110,7 +110,7 @@ def main():
     xib = np.concatenate((xi, np.ones((xi.shape[0], 1))), 1)
     d = (xib.T @ xib)+ 0.0001*np.identity(xib.shape[1])
     theta_star = np.linalg.lstsq(d, xib.T @ yi, rcond=None)
-    true_objective = jacob(theta_star[0], xi, yi)
+    true_objective = loss(theta_star[0], xi, yi)
 
     print("A\\b Values")
     print(theta_star[0])

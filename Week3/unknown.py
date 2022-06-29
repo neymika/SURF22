@@ -44,7 +44,7 @@ def main():
     for i in range(len(minibatches)):
         print(f'SGD with minibatch size = {minibatches[i]}')
         test_start_iter = timeit.default_timer()
-        results.append(sgdescent.remote(fi, dffi, initialguess, \
+        results.append(sgdescent.remote(psi, dfpsi, initialguess, \
         firsteta, xi, yi, epochs=2000*200/minibatches[i], miter=minibatches[i], tau=1e-6))
         test_end_iter = timeit.default_timer()
         print(test_end_iter - test_start_iter )
@@ -59,7 +59,7 @@ def main():
 
     print("Performing Steepest Descent")
     test_start_iter = timeit.default_timer()
-    gdsigmafound, gdsiglosses, gdsigfuncs, gdsigolosses = steepestdescent(jacob, dfjacob, initialguess, 1e-6, 1, 1e-5, .5, xi, yi, epochs=2000)
+    gdsigmafound, gdsiglosses, gdsigfuncs, gdsigolosses = steepestdescent(loss, dfloss, initialguess, 1e-6, 1, 1e-5, .5, xi, yi, epochs=2000)
     test_end_iter = timeit.default_timer()
     print(test_end_iter - test_start_iter )
     print()

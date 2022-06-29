@@ -24,7 +24,7 @@ def style(p, autohide=False):
     if autohide: p.toolbar.autohide=True
     return p
 
-def jacob(sig, xi, yi, lam=1e-4):
+def loss(sig, xi, yi, lam=1e-4):
     sumi = (lam/2)*(sig.T @ sig)
     xi_til = np.hstack((xi, np.ones((xi.shape[0],1))))
     netsum = np.mean((xi_til @ sig - yi)**2)/2
@@ -32,7 +32,7 @@ def jacob(sig, xi, yi, lam=1e-4):
 
     return sumi
 
-def dfjacob(sig, xi, yi, lam=1e-4):
+def dfloss(sig, xi, yi, lam=1e-4):
     xi_til = np.hstack((xi, np.ones((xi.shape[0],1))))
     derivs  = (xi_til @ sig - yi) @ xi_til
 
@@ -40,12 +40,12 @@ def dfjacob(sig, xi, yi, lam=1e-4):
 
     return derivs/xi.shape[0]
 
-def fi(sig, i, xi, yi, lam=1e-4):
+def psi(sig, i, xi, yi, lam=1e-4):
     sumi = lam*(sig.T @ sig) + ((sig.T @ np.append(xi[i], 1)) - yi[i])**2
 
     return sumi/2
 
-def dffi(sig, j, xi, yi, lam=1e-4):
+def dfpsi(sig, j, xi, yi, lam=1e-4):
     largei = np.append(xi[j], 1)
     derivs = (sig.T @ largei - yi[j])*largei
     derivs += lam * sig.T
@@ -114,7 +114,7 @@ def secondeta(it):
 def main():
     xi, yi = data_table()
     test_start_iter = timeit.default_timer()
-    xsvrgd, lsvrgd, olsvrgd = svrgdescent(fi, dffi, np.ones(shape=(xi[1].shape[0]+1,)), .5, \
+    xsvrgd, lsvrgd, olsvrgd = svrgdescent(psi, dfpsi, np.ones(shape=(xi[1].shape[0]+1,)), .5, \
     epochs=1000, miter=20, naive=True, xi=xi, yi=yi)
     test_end_iter = timeit.default_timer()
     print(test_end_iter - test_start_iter )
@@ -127,7 +127,7 @@ def main():
     xib = np.concatenate((xi, np.ones((xi.shape[0], 1))), 1)
     d = (xib.T @ xib)+ 0.0001*np.identity(xib.shape[1])
     theta_star = np.linalg.lstsq(d, xib.T @ yi, rcond=None)
-    true_objective = jacob(theta_star[0], xi, yi)
+    true_objective = loss(theta_star[0], xi, yi)
 
     print("A\\b Values")
     print(theta_star[0])

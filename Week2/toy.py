@@ -31,7 +31,7 @@ truebetas = .5*np.ones(shape=(20,))
 trueyis = np.matmul(truebetas, np.transpose(xi)) + 2
 yi = trueyis + np.random.normal(0.0, .01, size=(1000,))
 
-def jacob(sig, lam=1e-4):
+def loss(sig, lam=1e-4):
     sumi = (lam/2)*(sig.T @ sig)
     xi_til = np.hstack((xi, np.ones((xi.shape[0],1))))
     netsum = np.mean((xi_til @ sig - yi)**2)/2
@@ -39,7 +39,7 @@ def jacob(sig, lam=1e-4):
 
     return sumi
 
-def dfjacob(sig, lam=1e-4):
+def dfloss(sig, lam=1e-4):
     xi_til = np.hstack((xi, np.ones((xi.shape[0],1))))
     derivs  = (xi_til @ sig - yi) @ xi_til
 
@@ -47,12 +47,12 @@ def dfjacob(sig, lam=1e-4):
 
     return derivs/xi.shape[0]
 
-def fi(sig, i, lam=1e-4):
+def psi(sig, i, lam=1e-4):
     sumi = lam*(sig.T @ sig) + ((sig.T @ np.append(xi[i], 1)) - yi[i])**2
 
     return sumi/2
 
-def dffi(sig, j, lam=1e-4):
+def dfpsi(sig, j, lam=1e-4):
     largei = np.append(xi[j], 1)
     derivs = (sig.T @ largei - yi[j])*largei
     derivs += lam * sig.T
@@ -87,11 +87,11 @@ def sgdescent(f, df, x0, etait, epochs=1000, miter=50, tau=1e-4):
     change = x0+1
     losses = np.array([np.linalg.norm(change-1, ord=2)])
     np.random.seed(2022)
-    ahist = np.array([jacob(xk)])
-    olosses = np.array([np.linalg.norm(dfjacob(xk), ord=2)/np.linalg.norm(xk, ord=2)])
+    ahist = np.array([loss(xk)])
+    olosses = np.array([np.linalg.norm(dfloss(xk), ord=2)/np.linalg.norm(xk, ord=2)])
 
 
-    while np.linalg.norm(dfjacob(xk), ord=2)/np.linalg.norm(xk, ord=2) > tau:
+    while np.linalg.norm(dfloss(xk), ord=2)/np.linalg.norm(xk, ord=2) > tau:
         change = np.copy(xk)
 
         if k >= 3:
@@ -105,8 +105,8 @@ def sgdescent(f, df, x0, etait, epochs=1000, miter=50, tau=1e-4):
 
         xhist = np.append(xhist, [xk], axis=0)
         losses = np.append(losses, [np.linalg.norm(change - xk, ord=2) / np.linalg.norm(xk, ord=2)])
-        olosses = np.append(olosses, [np.linalg.norm(dfjacob(xk), ord=2)/np.linalg.norm(xk, ord=2)])
-        ahist = np.append(ahist, [jacob(xk)])
+        olosses = np.append(olosses, [np.linalg.norm(dfloss(xk), ord=2)/np.linalg.norm(xk, ord=2)])
+        ahist = np.append(ahist, [loss(xk)])
 
         change -= xk
 
@@ -137,7 +137,7 @@ def steepestdescent(f, df, x0, tau, alf0, mu1, rho, epochs =1100):
 
 
     # while np.linalg.norm(df(xk), ord=2)/np.linalg.norm(xk, ord=2) > tau:
-    while np.linalg.norm(dfjacob(xk), ord=2)/np.linalg.norm(xk, ord=2) > tau:
+    while np.linalg.norm(dfloss(xk), ord=2)/np.linalg.norm(xk, ord=2) > tau:
         change = np.copy(xk)
 
         if k != 0:
@@ -169,7 +169,7 @@ def main():
     for i in range(len(minibatches)):
         print(f'SGD with minibatch size = {minibatches[i]}')
         test_start_iter = timeit.default_timer()
-        sigmafound, siglosses, sigfuncs, sigolosses = sgdescent(fi, dffi, initialguess, \
+        sigmafound, siglosses, sigfuncs, sigolosses = sgdescent(psi, dfpsi, initialguess, \
         firsteta, epochs=200*1000/minibatches[i], miter=minibatches[i], tau=1e-6)
         test_end_iter = timeit.default_timer()
         print(test_end_iter - test_start_iter )
@@ -182,7 +182,7 @@ def main():
 
     print("Performing Steepest Descent")
     test_start_iter = timeit.default_timer()
-    gdsigmafound, gdsiglosses, gdsigfuncs, gdsigolosses = steepestdescent(jacob, dfjacob, initialguess, 1e-6, 1, 1e-5, .5, epochs=200)
+    gdsigmafound, gdsiglosses, gdsigfuncs, gdsigolosses = steepestdescent(loss, dfloss, initialguess, 1e-6, 1, 1e-5, .5, epochs=200)
     test_end_iter = timeit.default_timer()
     print(test_end_iter - test_start_iter )
     print()

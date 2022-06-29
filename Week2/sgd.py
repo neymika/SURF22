@@ -25,7 +25,7 @@ def style(p, autohide=False):
     if autohide: p.toolbar.autohide=True
     return p
 
-def jacob(sig, xi, yi, lam=1e-4):
+def loss(sig, xi, yi, lam=1e-4):
     sumi = (lam/2)*(sig.T @ sig)
     xi_til = np.hstack((xi, np.ones((xi.shape[0],1))))
     netsum = np.mean((xi_til @ sig - yi)**2)/2
@@ -33,7 +33,7 @@ def jacob(sig, xi, yi, lam=1e-4):
 
     return sumi
 
-def dfjacob(sig, xi, yi, lam=1e-4):
+def dfloss(sig, xi, yi, lam=1e-4):
     xi_til = np.hstack((xi, np.ones((xi.shape[0],1))))
     derivs  = (xi_til @ sig - yi) @ xi_til
 
@@ -41,12 +41,12 @@ def dfjacob(sig, xi, yi, lam=1e-4):
 
     return derivs/xi.shape[0]
 
-def fi(sig, i, xi, yi, lam=1e-4):
+def psi(sig, i, xi, yi, lam=1e-4):
     sumi = lam*(sig.T @ sig) + ((sig.T @ np.append(xi[i], 1)) - yi[i])**2
 
     return sumi/2
 
-def dffi(sig, j, xi, yi, lam=1e-4):
+def dfpsi(sig, j, xi, yi, lam=1e-4):
     largei = np.append(xi[j], 1)
     derivs = (sig.T @ largei - yi[j])*largei
     derivs += lam * sig.T
@@ -64,8 +64,8 @@ def sgdescent(f, df, x0, etait, xi=None, yi=None, epochs=1000, miter=50, tau=1e-
     change = x0+1
     losses = np.array([np.linalg.norm(change-1, ord=2)])
     np.random.seed(2022)
-    ahist = np.array([jacob(xk, xi, yi)])
-    num = dfjacob(xk, xi, yi)
+    ahist = np.array([loss(xk, xi, yi)])
+    num = dfloss(xk, xi, yi)
     olosses = np.array([np.linalg.norm(num, ord=2)/np.linalg.norm(xk, ord=2)])
 
     while losses[-1] > tau:
@@ -83,9 +83,9 @@ def sgdescent(f, df, x0, etait, xi=None, yi=None, epochs=1000, miter=50, tau=1e-
 
         xhist = np.append(xhist, [xk], axis=0)
         losses = np.append(losses, [np.linalg.norm(change - xk, ord=2) / np.linalg.norm(xk, ord=2)])
-        num = dfjacob(xk, xi, yi)
+        num = dfloss(xk, xi, yi)
         olosses = np.append(olosses, [np.linalg.norm(num, ord=2)/np.linalg.norm(xk, ord=2)])
-        ahist = np.append(ahist, [jacob(xk, xi, yi)])
+        ahist = np.append(ahist, [loss(xk, xi, yi)])
 
         change -= xk
 
@@ -106,7 +106,7 @@ def main():
     xi, yi = data_table()
     test_start_iter = timeit.default_timer()
     initialguess = 2.25*np.ones(shape=(xi[1].shape[0]+1,))
-    sigmafound, siglosses, sigfuncs, sigolosses = ray.get(sgdescent.remote(fi, dffi, \
+    sigmafound, siglosses, sigfuncs, sigolosses = ray.get(sgdescent.remote(psi, dfpsi, \
     initialguess, firsteta, xi, yi, epochs=5000, miter=20))
     test_end_iter = timeit.default_timer()
     print(test_end_iter - test_start_iter )
@@ -119,7 +119,7 @@ def main():
     xib = np.concatenate((xi, np.ones((xi.shape[0], 1))), 1)
     d = (xib.T @ xib)+ 0.0001*np.identity(xib.shape[1])
     theta_star = np.linalg.lstsq(d, xib.T @ yi, rcond=None)
-    true_objective = jacob(theta_star[0], xi, yi)
+    true_objective = loss(theta_star[0], xi, yi)
 
     print("A\\b Values")
     print(theta_star[0])
