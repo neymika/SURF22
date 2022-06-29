@@ -117,7 +117,7 @@ def main():
 
     try:
         p = bokeh.plotting.figure(height=300, width=800, x_axis_label="Number of iterations", \
-                          y_axis_label="||∇J(θ)|| Values", title="||∇J(θ)|| vs. Number Iterations for GD", \
+                          y_axis_label="||∇L(w)|| Values", title="||∇L(w)|| vs. Number Iterations for GD", \
                           y_axis_type="log")
         p.line(range(0, siglosses.shape[0], 1), siglosses, line_color="navy")
         p.xgrid.grid_line_color = None
@@ -134,9 +134,9 @@ def main():
         ax = plt.gca()
         ax.plot(range(0, siglosses.shape[0], 1), siglosses, '-o', markeredgecolor="none")
         ax.set_yscale('log')
-        plt.title("||∇J(θ)|| vs. Number Iterations for GD")
+        plt.title("||∇L(w)|| vs. Number Iterations for GD")
         plt.xlabel("Number of iterations")
-        plt.ylabel("||∇J(θ)|| Values")
+        plt.ylabel("||∇L(w)|| Values")
         plt.savefig("toygradient_descent_loss.png", bbox_inches='tight')
 
 if __name__ == "__main__":

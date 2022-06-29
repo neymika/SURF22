@@ -189,8 +189,8 @@ def main():
 
 
     try:
-        p = bokeh.plotting.figure(height=300, width=800, x_axis_label="Major Epochs (# of ∇Ψ(θ)/m)", \
-                          y_axis_label="J(θ) Values", title="J(θ) vs. Major Epochs", \
+        p = bokeh.plotting.figure(height=300, width=800, x_axis_label="Major Epochs (# of ∇Ψ(w)/m)", \
+                          y_axis_label="L(w) Values", title="L(w) vs. Major Epochs", \
                           y_axis_type="log")
         colors = itertools.cycle(palette(('#000003', '#410967', '#932567', '#DC5039', '#FBA40A', '#79D151'), len(minibatches) + 1))
         for mini in minibatches:
@@ -216,8 +216,8 @@ def main():
         p.legend.background_fill_alpha = 0.2
         export_png(style(p), filename="toy_func.png")
 
-        p = bokeh.plotting.figure(height=300, width=800, x_axis_label="Major Epochs (# of ∇Ψ(θ)/m)", \
-                          y_axis_label="||∇J(θ)|| Values", title="||∇J(θ)|| vs. Major Epochs", \
+        p = bokeh.plotting.figure(height=300, width=800, x_axis_label="Major Epochs (# of ∇Ψ(w)/m)", \
+                          y_axis_label="||∇L(w)|| Values", title="||∇L(w)|| vs. Major Epochs", \
                           y_axis_type="log")
         for mini in minibatches:
             gradn = int(1000/mini)
@@ -242,8 +242,8 @@ def main():
         p.legend.background_fill_alpha = 0.2
         export_png(style(p), filename="toy_oloss.png")
 
-        p = bokeh.plotting.figure(height=300, width=800, x_axis_label="Major Epochs (# of ∇Ψ(θ)/m)", \
-                          y_axis_label="||Δθ|| Values", title="||Δθ|| vs. Major Epochs", \
+        p = bokeh.plotting.figure(height=300, width=800, x_axis_label="Major Epochs (# of ∇Ψ(w)/m)", \
+                          y_axis_label="||Δw|| Values", title="||Δw|| vs. Major Epochs", \
                           y_axis_type="log")
         for mini in minibatches:
             gradn = int(1000/mini)
@@ -280,9 +280,9 @@ def main():
         ax.plot(range(0, gdsigfuncs.shape[0], 1), gdsigfuncs, '-.', markeredgecolor="none", \
         label=f'Gradient Descent')
         ax.set_yscale('log')
-        plt.title("J(θ) vs. Major Epochs")
-        plt.xlabel(r"Major Epochs (# of $\nabla$Ψ(θ)/m)")
-        plt.ylabel(r"J(θ) Values")
+        plt.title("L(w) vs. Major Epochs")
+        plt.xlabel(r"Major Epochs (# of $\nabla$Ψ(w)/m)")
+        plt.ylabel(r"L(w) Values")
         plt.legend(bbox_to_anchor=(1,1.25), loc='upper left', ncol=1, title="Optimization Methods")
         plt.savefig("toy_func.png", bbox_inches='tight')
 
@@ -297,9 +297,9 @@ def main():
         ax.plot(range(0, gdsiglosses.shape[0], 1), gdsiglosses, '-.', markeredgecolor="none", \
         label=f'Gradient Descent')
         ax.set_yscale('log')
-        plt.title("||Δθ|| vs. Major Epochs")
-        plt.xlabel(r"Major Epochs (# of $\nabla$Ψ(θ)/m)")
-        plt.ylabel(r"||Δθ|| Values")
+        plt.title("||Δw|| vs. Major Epochs")
+        plt.xlabel(r"Major Epochs (# of $\nabla$Ψ(w)/m)")
+        plt.ylabel(r"||Δw|| Values")
         plt.legend(bbox_to_anchor=(1,1.25), loc='upper left', ncol=1, title="Optimization Methods")
         plt.savefig("toy_loss.png", bbox_inches='tight')
 
@@ -314,9 +314,9 @@ def main():
         ax.plot(range(0, gdsigolosses.shape[0], 1), gdsigolosses, '-.', markeredgecolor="none", \
         label=f'Gradient Descent')
         ax.set_yscale('log')
-        plt.title(r"||$\nabla$J(θ)|| vs. Major Epochs")
-        plt.xlabel(r"Major Epochs (# of $\nabla$Ψ(θ)/m)")
-        plt.ylabel(r"||$\nabla$J(θ)|| Values")
+        plt.title(r"||$\nabla$L(w)|| vs. Major Epochs")
+        plt.xlabel(r"Major Epochs (# of $\nabla$Ψ(w)/m)")
+        plt.ylabel(r"||$\nabla$L(w)|| Values")
         plt.legend(bbox_to_anchor=(1,1.25), loc='upper left', ncol=1, title="Optimization Methods")
         plt.savefig("toy_oloss.png", bbox_inches='tight')
 

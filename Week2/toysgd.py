@@ -123,7 +123,7 @@ def main():
 
     try:
         p = bokeh.plotting.figure(height=300, width=800, x_axis_label="Major Epochs", \
-                          y_axis_label="J(θ) Values", title="J(θ) vs. Major Epochs for SGD", \
+                          y_axis_label="L(w) Values", title="L(w) vs. Major Epochs for SGD", \
                           y_axis_type="log")
         p.line(range(0, sigfuncs.shape[0], 1), sigfuncs, line_color="navy")
         p.xgrid.grid_line_color = None
@@ -136,7 +136,7 @@ def main():
         export_png(style(p), filename="toysgd_func.png")
 
         p = bokeh.plotting.figure(height=300, width=800, x_axis_label="Major Epochs", \
-                          y_axis_label="||∇J(θ)|| Values", title="||∇J(θ)|| vs. Major Epochs for SGD", \
+                          y_axis_label="||∇L(w)|| Values", title="||∇L(w)|| vs. Major Epochs for SGD", \
                           y_axis_type="log")
         p.line(range(0, sigolosses.shape[0], 1), sigolosses, line_color="navy")
         p.xgrid.grid_line_color = None
@@ -149,7 +149,7 @@ def main():
         export_png(style(p), filename="toysgd_olosses.png")
 
         p = bokeh.plotting.figure(height=300, width=800, x_axis_label="Major Epochs", \
-                          y_axis_label="||Δθ|| Values", title="||Δθ|| vs. Major Epochs for SGD", \
+                          y_axis_label="||Δw|| Values", title="||Δw|| vs. Major Epochs for SGD", \
                           y_axis_type="log")
         p.line(range(0, siglosses.shape[0], 1), siglosses, line_color="navy")
         p.xgrid.grid_line_color = None
@@ -166,27 +166,27 @@ def main():
         ax = plt.gca()
         ax.plot(range(0, sigolosses.shape[0], 1), sigolosses, '-o', markeredgecolor="none")
         ax.set_yscale('log')
-        plt.title("||∇J(θ)|| vs. Major Epochs for SGD")
+        plt.title("||∇L(w)|| vs. Major Epochs for SGD")
         plt.xlabel("Major Epochs")
-        plt.ylabel("||∇J(θ)|| Values")
+        plt.ylabel("||∇L(w)|| Values")
         plt.savefig("toysgd_oloss.png", bbox_inches='tight')
 
         fig = plt.figure()
         ax = plt.gca()
         ax.plot(range(0, sigolosses.shape[0], 1), sigolosses, '-o', markeredgecolor="none")
         ax.set_yscale('log')
-        plt.title("||Δθ|| vs. Major Epochs for SGD")
+        plt.title("||Δw|| vs. Major Epochs for SGD")
         plt.xlabel("Major Epochs")
-        plt.ylabel("||Δθ|| Values")
+        plt.ylabel("||Δw|| Values")
         plt.savefig("toysgd_loss.png", bbox_inches='tight')
 
         fig = plt.figure()
         ax = plt.gca()
         ax.plot(range(0, sigfuncs.shape[0], 1), sigfuncs, '-o', markeredgecolor="none")
         ax.set_yscale('log')
-        plt.title("J(θ) vs. Major Epochs for SGD")
+        plt.title("L(w) vs. Major Epochs for SGD")
         plt.xlabel("Major Epochs")
-        plt.ylabel("J(θ) Values")
+        plt.ylabel("L(w) Values")
         plt.savefig("toysgd_func.png", bbox_inches='tight')
 
 if __name__ == "__main__":
