@@ -109,12 +109,16 @@
   * Made tau even smaller (1e-6!). Saw some interesting results that I want to ask Pan about the next time we meet.
   * Added SVRG implementation script. Is not really working as I think it should. Going to debug.
   * Comparison of SGD and GD with varying minibatch sizes for unknown homework dataset example.
-    * Requires the same package installations as above. Also requires the following package AND THE PATH ADDITION AT THE TOP OF THE README
+    * Requires the same package installations as above. For parallel calls, requires the following package AND THE PATH ADDITION AT THE TOP OF THE README
       * ```python
         pip3 install ray
         ```
-    * To run file:
+    * To run file with parallel calls:
       * ```python
         python3 unknown.py
         ```
+    * To run file with sequential calls (Takes longer):
+    * ```python
+      python3 unknown_sequential.py
+      ```
   * Write a report very carefully with definitions by Thursday 2AM

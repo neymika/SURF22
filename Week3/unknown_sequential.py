@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 import bokeh.plotting
 from bokeh.io import output_notebook, export_png
 import sys
-from Week2.steepestdescent import steepestdescent
-from Week2.sgd import *
+from Week2.steepestdescent import *
+from Week2.sgd import psi, dfpsi, firsteta
 from Week2.makedata import data_table
 import ray
 from bokeh.palettes import linear_palette as palette
@@ -31,6 +31,48 @@ def style(p, autohide=False):
     if autohide: p.toolbar.autohide=True
     return p
 
+def sgdescent(f, df, x0, etait, xi=None, yi=None, epochs=1000, miter=50, tau=1e-6):
+    if xi is None:
+        xi, yi = data_table()
+
+    k = 0
+    xk = x0
+    xhist = np.array([xk])
+    change = x0+1
+    losses = np.array([np.linalg.norm(change-1, ord=2)])
+    np.random.seed(2022)
+    ahist = np.array([loss(xk, xi, yi)])
+    num = dfloss(xk, xi, yi)
+    olosses = np.array([np.linalg.norm(num, ord=2)/np.linalg.norm(xk, ord=2)])
+
+    while losses[-1] > tau:
+        change = np.copy(xk)
+
+        if k >= 3:
+            alfk = etait(k)
+        else:
+            alfk = 1/(k+3)
+
+        chosen = np.random.choice(xi.shape[0], miter, replace=False)
+        for m in range(miter):
+            deriv = df(xk, chosen[m], xi, yi)
+            xk = xk - alfk*deriv/miter
+
+        xhist = np.append(xhist, [xk], axis=0)
+        losses = np.append(losses, [np.linalg.norm(change - xk, ord=2) / np.linalg.norm(xk, ord=2)])
+        num = dfloss(xk, xi, yi)
+        olosses = np.append(olosses, [np.linalg.norm(num, ord=2)/np.linalg.norm(xk, ord=2)])
+        ahist = np.append(ahist, [loss(xk, xi, yi)])
+
+        change -= xk
+
+        k += 1
+        if k == epochs:
+            print("Failed to converge")
+            break
+
+    return xhist, losses, ahist, olosses
+
 def main():
     xi, yi = data_table()
     print("Performing SGD at multiple different minibatch sizes")
@@ -40,16 +82,16 @@ def main():
     histsiglosses = {}
     histsigfuncs = {}
     histsigolosses = {}
-    results = []
-    test_end_iter = []
-    test_start_iter = []
-    for i in range(len(minibatches)):
-        results.append(sgdescent.remote(psi, dfpsi, initialguess, \
-        firsteta, xi, yi, epochs=2000*200/minibatches[i], miter=minibatches[i], tau=1e-6))
 
-    for i in range(len(results)):
+    for i in range(len(minibatches)):
         print(f'SGD with minibatch size = {minibatches[i]}')
-        sigmafound, siglosses, sigfuncs, sigolosses = ray.get(results[i])
+        test_start_iter = timeit.default_timer()
+        sigmafound, siglosses, sigfuncs, sigolosses = sgdescent(psi, dfpsi, initialguess, \
+        firsteta, xi, yi, epochs=2000*200/minibatches[i], miter=minibatches[i], tau=1e-6)
+        test_end_iter = timeit.default_timer()
+        print(test_end_iter - test_start_iter )
+        print()
+        
         histsigfound[minibatches[i]] = sigmafound
         histsiglosses[minibatches[i]] = siglosses
         histsigfuncs[minibatches[i]] = sigfuncs
