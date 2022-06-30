@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import bokeh.plotting
 from bokeh.io import output_notebook, export_png
 from bokeh.palettes import linear_palette as palette
+from bokeh.layouts import gridplot
 import itertools
 import sys
 plt.style.use('seaborn-white')
@@ -123,9 +124,72 @@ def firsteta(it):
 def secondeta(it):
     return 1/np.sqrt(it)
 
+def svrgdescent(f, df, x0, etait, tau=1e-4, epochs=1000, miter=100, naive=True, xi=None, yi=None, func=False):
+    if xi is None:
+        xi, yi = data_table()
+
+    k = 0
+    xs = np.copy(x0)
+    xhist = np.array([xs])
+    reset = False
+    change = x0+1
+    mu = np.zeros(x0.shape[0])
+    losses = np.array([np.linalg.norm(change, ord=2)])
+    np.random.seed(2022)
+    ahist = np.array([loss(xs)])
+    chosen = np.random.choice(xi.shape[0])
+    olosses = np.array([np.linalg.norm(df(xs, chosen), ord=2)])
+
+
+    for s in range(epochs):
+        xk = np.copy(xs)
+        change = np.copy(xs)
+
+        mu *= 0
+
+        if func:
+            if k < 3:
+                eta = 1/(k+3)
+            else:
+                eta = etait(k)
+        else:
+            eta = etait
+
+        for i in range(xi.shape[1]):
+            mu += df(xs, i)
+
+        mu /= (xi.shape[1]+1)
+        saved = np.array([xk])
+        chosen = np.random.choice(xi.shape[0], miter, replace=False)
+
+        for m in range(miter):
+            xk -= eta*(df(xk, chosen[m]) - df(xs, chosen[m]) + mu)/miter
+            saved = np.append(saved, [xk], axis=0)
+
+        olosses = np.append(olosses, [np.linalg.norm(mu, ord=2)/np.linalg.norm(xs, ord=2)])
+        if naive:
+            xs = xk
+        else:
+            chosen = np.random.choice(miter)
+            xs = saved[chosen]
+
+        xhist = np.append(xhist, [xs], axis=0)
+        losses = np.append(losses, [np.linalg.norm(change - xs, ord=2)])
+        ahist = np.append(ahist, [loss(xk)])
+
+        k += 1
+        if k == epochs:
+            print("Failed to converge")
+            break
+        if losses[-1] < tau:
+            break
+#         print(np.linalg.norm(mu, ord=2))
+
+    return xhist, losses, ahist, olosses
+
 def steepestdescent(f, df, x0, tau, alf0, mu1, rho, epochs =1100):
     k = 0
-    xk = np.copy(x0)
+    xk = x0
     xhist = np.array([xk])
     ahist = np.array([f(xk)])
     alfk = alf0
@@ -159,18 +223,38 @@ def steepestdescent(f, df, x0, tau, alf0, mu1, rho, epochs =1100):
     return xhist, losses, ahist, olosses
 
 def main():
-    print("Performing SGD at multiple different minibatch sizes")
+    print("Performing SVRG at multiple different minibatch sizes")
     minibatches = [1, 10, 50, 100, 1000]
     initialguess = 2.25*np.ones(shape=(xi[1].shape[0]+1,))
+    histsignfound = {}
+    histsignlosses = {}
+    histsignfuncs = {}
+    histsignolosses = {}
+    for i in range(len(minibatches)):
+        print(f'SVRG with minibatch size = {minibatches[i]}')
+        test_start_iter = timeit.default_timer()
+        sigmafound, siglosses, sigfuncs, sigolosses = svrgdescent(psi, \
+        dfpsi, initialguess, firsteta, tau=1e-4, epochs=int(200*1000/minibatches[i]), miter=minibatches[i], \
+        naive=True, xi=xi, yi=yi, func=True)
+        test_end_iter = timeit.default_timer()
+        print(test_end_iter - test_start_iter )
+        print()
+
+        histsignfound[minibatches[i]] = sigmafound
+        histsignlosses[minibatches[i]] = siglosses
+        histsignfuncs[minibatches[i]] = sigfuncs
+        histsignolosses[minibatches[i]] = sigolosses
+
     histsigfound = {}
     histsiglosses = {}
     histsigfuncs = {}
     histsigolosses = {}
     for i in range(len(minibatches)):
-        print(f'SGD with minibatch size = {minibatches[i]}')
+        print(f'SVRG with minibatch size = {minibatches[i]}')
         test_start_iter = timeit.default_timer()
-        sigmafound, siglosses, sigfuncs, sigolosses = sgdescent(psi, dfpsi, initialguess, \
-        firsteta, epochs=200*1000/minibatches[i], miter=minibatches[i], tau=1e-4)
+        sigmafound, siglosses, sigfuncs, sigolosses = svrgdescent(psi, \
+        dfpsi, initialguess, firsteta, tau=1e-4, epochs=int(200*1000/minibatches[i]), miter=minibatches[i], \
+        naive=False, xi=xi, yi=yi, func=True)
         test_end_iter = timeit.default_timer()
         print(test_end_iter - test_start_iter )
         print()
@@ -180,6 +264,24 @@ def main():
         histsigfuncs[minibatches[i]] = sigfuncs
         histsigolosses[minibatches[i]] = sigolosses
 
+    histsigsgdfound = {}
+    histsigsgdlosses = {}
+    histsigsgdfuncs = {}
+    histsigsgdolosses = {}
+    for i in range(len(minibatches)):
+        print(f'SGD with minibatch size = {minibatches[i]}')
+        test_start_iter = timeit.default_timer()
+        sigmafound, siglosses, sigfuncs, sigolosses = sgdescent(psi, dfpsi, initialguess, \
+        firsteta, epochs=200*1000/minibatches[i], miter=minibatches[i], tau=1e-4)
+        test_end_iter = timeit.default_timer()
+        print(test_end_iter - test_start_iter )
+        print()
+
+        histsigsgdfound[minibatches[i]] = sigmafound
+        histsigsgdlosses[minibatches[i]] = siglosses
+        histsigsgdfuncs[minibatches[i]] = sigfuncs
+        histsigsgdolosses[minibatches[i]] = sigolosses
+
     print("Performing Steepest Descent")
     test_start_iter = timeit.default_timer()
     gdsigmafound, gdsiglosses, gdsigfuncs, gdsigolosses = steepestdescent(loss, dfloss, initialguess, 1e-4, 1, 1e-5, .5, epochs=200)
@@ -187,6 +289,70 @@ def main():
     print(test_end_iter - test_start_iter )
     print()
 
+    fig, axs = plt.subplots(3, 3)
+
+    for j in range(3):
+        if j == 0:
+            plt.setp(axs[0, j], title = 'SGD')
+            plt.setp(axs[j, 0], ylabel='L(w) Values')
+        elif j == 1:
+            plt.setp(axs[0, j], title = 'Naive SVRG')
+            plt.setp(axs[j, 0], ylabel=r'||$\nabla$L(w)|| Values')
+        else:
+            plt.setp(axs[0, j], title = 'Random SVRG')
+            plt.setp(axs[j, 0], ylabel='||Δw|| Values')
+            plt.setp(axs[:, j], xlabel=r'Major Epochs (# of $\nabla$Ψ(w)/m)')
+
+        for i in range(3):
+            axs[i,j].plot(range(0, gdsigfuncs.shape[0], 1), gdsigfuncs, '-.', markeredgecolor="none", \
+            label=f'Gradient Descent')
+            axs[i,j].set_yscale('log')
+
+    for mini in range(len(minibatches)):
+        gradn = int(1000/minibatches[mini])
+        sizes = histsigsgdfuncs[minibatches[mini]].shape[0]
+        axs[0, 0].plot(np.linspace(start=0, stop=(sizes/gradn), num=sizes), \
+        histsigsgdfuncs[minibatches[mini]], '-.', markeredgecolor="none",  \
+        label=f'minibatch size = {minibatches[mini]}')
+
+        axs[1, 0].plot(np.linspace(start=0, stop=(sizes/gradn), num=sizes), \
+        histsigsgdolosses[minibatches[mini]], '-.', markeredgecolor="none", \
+        label=f'minibatch size = {minibatches[mini]}')
+
+        axs[2, 0].plot(np.linspace(start=0, stop=(sizes/gradn), num=sizes), \
+        histsigsgdlosses[minibatches[mini]], '-.', markeredgecolor="none", \
+        label=f'minibatch size = {minibatches[mini]}')
+
+        sizes = histsignfuncs[minibatches[mini]].shape[0]
+        axs[0, 1].plot(np.linspace(start=0, stop=(sizes/gradn), num=sizes), \
+        histsignfuncs[minibatches[mini]], '-.', markeredgecolor="none",  \
+        label=f'minibatch size = {minibatches[mini]}')
+
+        axs[1, 1].plot(np.linspace(start=0, stop=(sizes/gradn), num=sizes), \
+        histsignolosses[minibatches[mini]], '-.', markeredgecolor="none", \
+        label=f'minibatch size = {minibatches[mini]}')
+
+        axs[2, 1].plot(np.linspace(start=0, stop=(sizes/gradn), num=sizes), \
+        histsignolosses[minibatches[mini]], '-.', markeredgecolor="none", \
+        label=f'minibatch size = {minibatches[mini]}')
+
+        sizes = histsigfuncs[minibatches[mini]].shape[0]
+        axs[0, 2].plot(np.linspace(start=0, stop=(sizes/gradn), num=sizes), \
+        histsigfuncs[minibatches[mini]], '-.', markeredgecolor="none",  \
+        label=f'minibatch size = {minibatches[mini]}')
+
+        axs[1, 2].plot(np.linspace(start=0, stop=(sizes/gradn), num=sizes), \
+        histsigolosses[minibatches[mini]], '-.', markeredgecolor="none", \
+        label=f'minibatch size = {minibatches[mini]}')
+
+        axs[2, 2].plot(np.linspace(start=0, stop=(sizes/gradn), num=sizes), \
+        histsiglosses[minibatches[mini]], '-.', markeredgecolor="none", \
+        label=f'minibatch size = {minibatches[mini]}')
+
+    fig.set_size_inches(18, 18)
+
+    plt.legend(bbox_to_anchor=(1,0.25), loc='upper left', ncol=1, title="Optimization Methods")
+    plt.savefig("toy_net.png", bbox_inches='tight')
 
     try:
         p = bokeh.plotting.figure(height=300, width=800, x_axis_label="Major Epochs (# of ∇Ψ(w)/m)", \
@@ -198,7 +364,7 @@ def main():
             sizes = histsigfuncs[mini].shape[0]
             p.line(np.linspace(start=0, stop=(sizes/gradn), num=sizes), \
             histsigfuncs[mini], color=next(colors), \
-            legend_label=f'SGD with minibatch size = {mini}')
+            legend_label=f'SVRG with minibatch size = {mini}')
         p.line(range(0, gdsigfuncs.shape[0], 1), gdsigfuncs, color = next(colors), \
         legend_label=f'Gradient Descent')
 
@@ -214,7 +380,7 @@ def main():
         p.legend.title_text_font_size = '10px'
         p.legend.label_text_font_size = '10px'
         p.legend.background_fill_alpha = 0.2
-        export_png(style(p), filename="toy_func.png")
+        export_png(style(p), filename="toyn_func.png")
 
         p = bokeh.plotting.figure(height=300, width=800, x_axis_label="Major Epochs (# of ∇Ψ(w)/m)", \
                           y_axis_label="||∇L(w)|| Values", title="||∇L(w)|| vs. Major Epochs", \
@@ -224,7 +390,7 @@ def main():
             sizes = histsigolosses[mini].shape[0]
             p.line(np.linspace(start=0, stop=(sizes/gradn), num=sizes), \
             histsigolosses[mini], line_color=next(colors), \
-            legend_label=f'SGD with minibatch size = {mini}')
+            legend_label=f'SVRG with minibatch size = {mini}')
         p.line(range(0, gdsigolosses.shape[0], 1), gdsigolosses, line_color = next(colors), \
         legend_label=f'Gradient Descent')
 
@@ -240,7 +406,7 @@ def main():
         p.legend.title_text_font_size = '10px'
         p.legend.label_text_font_size = '10px'
         p.legend.background_fill_alpha = 0.2
-        export_png(style(p), filename="toy_oloss.png")
+        export_png(style(p), filename="toyn_oloss.png")
 
         p = bokeh.plotting.figure(height=300, width=800, x_axis_label="Major Epochs (# of ∇Ψ(w)/m)", \
                           y_axis_label="||Δw|| Values", title="||Δw|| vs. Major Epochs", \
@@ -250,7 +416,7 @@ def main():
             sizes = histsiglosses[mini].shape[0]
             p.line(np.linspace(start=0, stop=(sizes/gradn), num=sizes), \
             histsiglosses[mini], line_color=next(colors), \
-            legend_label=f'SGD with minibatch size = {mini}')
+            legend_label=f'SVRG with minibatch size = {mini}')
         p.line(range(0, gdsiglosses.shape[0], 1), gdsiglosses, line_color = next(colors), \
         legend_label=f'Gradient Descent')
 
@@ -266,7 +432,7 @@ def main():
         p.legend.title_text_font_size = '10px'
         p.legend.label_text_font_size = '10px'
         p.legend.background_fill_alpha = 0.2
-        export_png(style(p), filename="toy_loss.png")
+        export_png(style(p), filename="toyn_loss.png")
     except Exception as e:
         print("Unable to use bokeh. Using matplotlib instead")
         fig = plt.figure()

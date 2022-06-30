@@ -52,39 +52,50 @@ def dfpsi(sig, j, xi, yi, lam=1e-4):
 
     return derivs
 
-
-def svrgdescent(f, df, x0, etait, epochs=1000, miter=100, naive=True, xi=None, yi=None):
+@ray.remote
+def svrgdescent(f, df, x0, etait, tau=1e-4, epochs=1000, miter=100, naive=True, xi=None, yi=None, func=False):
     if xi is None:
         xi, yi = data_table()
 
     k = 0
-    xog = x0
-    xs = x0
+    xs = np.copy(x0)
     xhist = np.array([xs])
     reset = False
-    change = x0
+    change = x0+1
     mu = np.zeros(x0.shape[0])
     losses = np.array([np.linalg.norm(change, ord=2)])
     np.random.seed(2022)
+    ahist = np.array([loss(xs, xi, yi)])
     chosen = np.random.choice(xi.shape[0])
     olosses = np.array([np.linalg.norm(df(xs, chosen, xi, yi), ord=2)])
 
 
     for s in range(epochs):
         xk = np.copy(xs)
-        xog = np.copy(xs)
+        change = np.copy(xs)
 
-        for i in range(49):
-            mu += df(xog, i, xi, yi)
+        mu *= 0
 
-        mu /= 49
+        if func:
+            if k < 3:
+                eta = 1/(k+3)
+            else:
+                eta = etait(k)
+        else:
+            eta = etait
+
+        for i in range(xi.shape[1]):
+            mu += df(xs, i, xi, yi)
+
+        mu /= (xi.shape[1]+1)
         saved = np.array([xk])
+        chosen = np.random.choice(xi.shape[0], miter, replace=False)
 
         for m in range(miter):
-            chosen = np.random.choice(xi.shape[0])
-            xk -= etait*(df(xk, chosen, xi, yi) - df(xog, chosen, xi, yi) + mu)/miter
+            xk -= eta*(df(xk, chosen[m], xi, yi) - df(xs, chosen[m], xi, yi) + mu)/miter
             saved = np.append(saved, [xk], axis=0)
 
+        olosses = np.append(olosses, [np.linalg.norm(mu, ord=2)/np.linalg.norm(xs, ord=2)])
         if naive:
             xs = xk
         else:
@@ -93,17 +104,17 @@ def svrgdescent(f, df, x0, etait, epochs=1000, miter=100, naive=True, xi=None, y
 
         xhist = np.append(xhist, [xs], axis=0)
         losses = np.append(losses, [np.linalg.norm(change - xs, ord=2)])
-        olosses = np.append(olosses, [np.linalg.norm(mu, ord=2)])
+        ahist = np.append(ahist, [loss(xk, xi, yi)])
 
         k += 1
         if k == epochs:
             print("Failed to converge")
             break
-        if np.linalg.norm(mu, ord=2) <= .01:
+        if losses[-1] < tau:
             break
 #         print(np.linalg.norm(mu, ord=2))
 
-    return xhist, losses, olosses
+    return xhist, losses, ahist, olosses
 
 def firsteta(it):
     return 1/it
@@ -113,16 +124,19 @@ def secondeta(it):
 
 def main():
     xi, yi = data_table()
+    initialguess = np.ones(shape=(xi[1].shape[0]+1,))
     test_start_iter = timeit.default_timer()
-    xsvrgd, lsvrgd, olsvrgd = svrgdescent(psi, dfpsi, np.ones(shape=(xi[1].shape[0]+1,)), .5, \
-    epochs=1000, miter=20, naive=True, xi=xi, yi=yi)
+    sigmafound, siglosses, sigfuncs, sigolosses = ray.get(svrgdescent.remote(psi, \
+    dfpsi, initialguess, firsteta, tau=1e-4, epochs=10000, miter=200, \
+    naive=False, xi=xi, yi=yi, func=True))
     test_end_iter = timeit.default_timer()
     print(test_end_iter - test_start_iter )
 
     print("Stochastic Gradient Descent Values")
-    print(xsvrgd[-1])
-    print(lsvrgd[-1])
-    print(olsvrgd[-1])
+    print(sigmafound[-1])
+    print(siglosses[-1])
+    print(sigolosses[-1])
+    print(sigolosses.shape)
 
     xib = np.concatenate((xi, np.ones((xi.shape[0], 1))), 1)
     d = (xib.T @ xib)+ 0.0001*np.identity(xib.shape[1])
@@ -132,6 +146,74 @@ def main():
     print("A\\b Values")
     print(theta_star[0])
     print(true_objective)
+
+    try:
+        p = bokeh.plotting.figure(height=300, width=800, x_axis_label="Number of iterations", \
+                          y_axis_label="L(w) Values", title="L(w) vs. Number Iterations for SVRG", \
+                          y_axis_type="log")
+        p.line(range(0, sigfuncs.shape[0], 1), sigfuncs, line_color="navy")
+        p.xgrid.grid_line_color = None
+        p.ygrid.grid_line_color = None
+        p.title.align = "center"
+        p.background_fill_color = None
+        p.border_fill_color = None
+        p.toolbar.logo = None
+        p.toolbar_location = None
+        export_png(style(p), filename="svrg_func.png")
+
+        p = bokeh.plotting.figure(height=300, width=800, x_axis_label="Major Epochs", \
+                          y_axis_label="||∇L(w)|| Values", title="||∇L(w)|| vs. Major Epochs for SVRG", \
+                          y_axis_type="log")
+        p.line(range(0, sigolosses.shape[0], 1), sigolosses, line_color="navy")
+        p.xgrid.grid_line_color = None
+        p.ygrid.grid_line_color = None
+        p.title.align = "center"
+        p.background_fill_color = None
+        p.border_fill_color = None
+        p.toolbar.logo = None
+        p.toolbar_location = None
+        export_png(style(p), filename="svrg_olosses.png")
+
+        p = bokeh.plotting.figure(height=300, width=800, x_axis_label="Major Epochs", \
+                          y_axis_label="||Δw|| Values", title="||Δw|| vs. Major Epochs for SVRG", \
+                          y_axis_type="log")
+        p.line(range(0, siglosses.shape[0], 1), siglosses, line_color="navy")
+        p.xgrid.grid_line_color = None
+        p.ygrid.grid_line_color = None
+        p.title.align = "center"
+        p.background_fill_color = None
+        p.border_fill_color = None
+        p.toolbar.logo = None
+        p.toolbar_location = None
+        export_png(style(p), filename="svrg_loss.png")
+    except Exception as e:
+        print("Unable to use bokeh. Using matplotlib instead")
+        fig = plt.figure()
+        ax = plt.gca()
+        ax.plot(range(0, sigolosses.shape[0], 1), sigolosses, '-o', markeredgecolor="none")
+        ax.set_yscale('log')
+        plt.title("||∇L(w)|| vs. Major Epochs for SVRG")
+        plt.xlabel("Major Epochs")
+        plt.ylabel("||∇L(w)|| Values")
+        plt.savefig("svrg_oloss.png", bbox_inches='tight')
+
+        fig = plt.figure()
+        ax = plt.gca()
+        ax.plot(range(0, sigolosses.shape[0], 1), sigolosses, '-o', markeredgecolor="none")
+        ax.set_yscale('log')
+        plt.title("||Δw|| vs. Major Epochs for SVRG")
+        plt.xlabel("Major Epochs")
+        plt.ylabel("||Δw|| Values")
+        plt.savefig("svrg_loss.png", bbox_inches='tight')
+
+        fig = plt.figure()
+        ax = plt.gca()
+        ax.plot(range(0, sigfuncs.shape[0], 1), sigfuncs, '-o', markeredgecolor="none")
+        ax.set_yscale('log')
+        plt.title("L(w) vs. Major Epochs for SVRG")
+        plt.xlabel("Major Epochs")
+        plt.ylabel("L(w) Values")
+        plt.savefig("svrg_func.png", bbox_inches='tight')
 
 if __name__ == "__main__":
     main()

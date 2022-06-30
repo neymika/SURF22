@@ -59,7 +59,7 @@ def sgdescent(f, df, x0, etait, xi=None, yi=None, epochs=1000, miter=50, tau=1e-
         xi, yi = data_table()
 
     k = 0
-    xk = x0
+    xk = np.copy(x0)
     xhist = np.array([xk])
     change = x0+1
     losses = np.array([np.linalg.norm(change-1, ord=2)])

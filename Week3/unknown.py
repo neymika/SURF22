@@ -35,7 +35,7 @@ def main():
     xi, yi = data_table()
     print("Performing SGD at multiple different minibatch sizes")
     minibatches = [1, 10, 50, 100, 200]
-    initialguess = 2.25*np.ones(shape=(xi[1].shape[0]+1,))
+    initialguess = np.ones(shape=(xi[1].shape[0]+1,))
     histsigfound = {}
     histsiglosses = {}
     histsigfuncs = {}
@@ -45,7 +45,7 @@ def main():
     test_start_iter = []
     for i in range(len(minibatches)):
         results.append(sgdescent.remote(psi, dfpsi, initialguess, \
-        firsteta, xi, yi, epochs=2000*200/minibatches[i], miter=minibatches[i], tau=1e-6))
+        firsteta, xi, yi, epochs=5000*200/minibatches[i], miter=minibatches[i], tau=1e-6))
 
     for i in range(len(results)):
         print(f'SGD with minibatch size = {minibatches[i]}')
@@ -54,12 +54,16 @@ def main():
         histsiglosses[minibatches[i]] = siglosses
         histsigfuncs[minibatches[i]] = sigfuncs
         histsigolosses[minibatches[i]] = sigolosses
+        print(siglosses[-1])
+        print(siglosses.shape)
+        print()
 
     print("Performing Steepest Descent")
     test_start_iter = timeit.default_timer()
-    gdsigmafound, gdsiglosses, gdsigfuncs, gdsigolosses = steepestdescent(loss, dfloss, initialguess, 1e-6, 1, 1e-5, .5, xi, yi, epochs=2000)
+    gdsigmafound, gdsiglosses, gdsigfuncs, gdsigolosses = steepestdescent(loss, dfloss, initialguess, 1e-3, 1, 1e-5, .5, xi, yi, epochs=5000)
     test_end_iter = timeit.default_timer()
     print(test_end_iter - test_start_iter )
+    print(gdsigolosses[-1])
     print()
 
 

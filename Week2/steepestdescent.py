@@ -64,7 +64,7 @@ def steepestdescent(f, df, x0, tau, alf0, mu1, rho, xi=None, yi=None, epochs=110
     if xi is None:
         xi, yi = data_table()
     k = 0
-    xk = x0
+    xk = np.copy(x0)
     xhist = np.array([xk])
     ahist = f(xk, xi, yi)
     alfk = alf0
@@ -89,6 +89,8 @@ def steepestdescent(f, df, x0, tau, alf0, mu1, rho, xi=None, yi=None, epochs=110
 
         k += 1
         if k == epochs:
+            print(tau)
+            print(olosses[-1])
             print("Failed to converge")
             break
 
