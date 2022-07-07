@@ -31,18 +31,47 @@ def lowfid(z, a, b):
 def varest(fz, e):
     return np.sum((fz - e)**2)/(fz.shape[0] - 1)
 
-def calculate_exp(a = 5, b = .1, lowsample = 9070, highsample = 8, budget = 200,
+def calculate_exp(a = 5, b = .1, lowsample = 3395, highsample = 36, budget = 40,
     alpha = .9455):
     exphs = np.zeros(shape=(budget,))
     expls = np.zeros(shape=(budget,))
     expmfs = np.zeros(shape=(budget,))
+    expmcs = np.zeros(shape=(budget,))
+
+    varhs = np.zeros(shape=(budget,))
+    varls = np.zeros(shape=(budget,))
+    varmfs = np.zeros(shape=(budget,))
+    varmcs = np.zeros(shape=(budget,))
 
     for i in range(budget):
         z = np.random.uniform(-np.pi, np.pi, size=(3,lowsample))
         exphs[i] = np.mean(highfid(z[:, :highsample], a, b))
         expls[i] = np.mean(lowfid(z, a, b))
         expmfs[i] = exphs[i] + alpha*(expls[i] - np.mean(lowfid(z[:, :highsample], a, b)))
+        expmcs[i] = np.mean(highfid(z[:, :40], a, b))
 
+        varhs[i] = np.var(highfid(z[:, :highsample], a, b))
+        varls[i] = np.var(lowfid(z, a, b))
+        varmfs[i] = varhs[i] + alpha*(varls[i] - np.var(lowfid(z[:, :highsample], a, b)))
+        varmcs[i] = np.var(highfid(z[:, :40], a, b))
+
+    print("MSE")
+    print(np.var(exphs))
+    print(np.var(expls))
+    print(np.var(expmfs))
+    print(np.var(expmcs))
+    print()
+    print("Mu_k")
+    print(np.mean(exphs))
+    print(np.mean(expls))
+    print(np.mean(expmfs))
+    print(np.mean(expmcs))
+    print()
+    print("sigma_k")
+    print(np.sqrt(np.mean(varhs)))
+    print(np.sqrt(np.mean(varls)))
+    print(np.sqrt(np.mean(varmfs)))
+    print(np.sqrt(np.mean(varmcs)))
     return exphs, expls, expmfs
 
 def main():

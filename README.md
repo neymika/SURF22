@@ -121,4 +121,17 @@
     * ```python
       python3 unknown_sequential.py
       ```
-  * Write a report very carefully with definitions by Thursday 2AM
+  ## :dancer: :worried: Week 4
+  * Mostly just worked on the interim report.
+  * To reproduce the main plots from the report and the multifidelity results use the same package installations as above.
+    * To run gradient descent plotting files:
+      * ```python
+        cd Week3
+        python3 unknown_paper.py
+        python3 toysvrg.py
+        ```
+    * To run multifidelity file:
+      * ```python
+        cd Week1
+        python3 toymultifidelity.py
+        ```

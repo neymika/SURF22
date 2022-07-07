@@ -112,7 +112,7 @@ def main():
     xib = np.concatenate((xi, np.ones((xi.shape[0], 1))), 1)
     d = (xib.T @ xib)+ 0.0001*np.identity(xib.shape[1])
     theta_star = np.linalg.lstsq(d, xib.T @ yi, rcond=None)
-    true_objective = loss(theta_star[0], xi, yi)
+    true_objective = dfloss(theta_star[0], xi, yi)
 
     print("A\\b Values")
     print(theta_star[0])

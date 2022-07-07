@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import timeit
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import bokeh.plotting
 from bokeh.io import output_notebook, export_png
@@ -234,10 +235,12 @@ def main():
         print(f'SVRG with minibatch size = {minibatches[i]}')
         test_start_iter = timeit.default_timer()
         sigmafound, siglosses, sigfuncs, sigolosses = svrgdescent(psi, \
-        dfpsi, initialguess, firsteta, tau=1e-4, epochs=int(200*1000/minibatches[i]), miter=minibatches[i], \
+        dfpsi, initialguess, firsteta, tau=1e-4, \
+        epochs=int(np.ceil(200*1000/(minibatches[i]+1000))), miter=minibatches[i], \
         naive=True, xi=xi, yi=yi, func=True)
         test_end_iter = timeit.default_timer()
         print(test_end_iter - test_start_iter )
+        print(sigolosses.shape)
         print()
 
         histsignfound[minibatches[i]] = sigmafound
@@ -253,10 +256,12 @@ def main():
         print(f'SVRG with minibatch size = {minibatches[i]}')
         test_start_iter = timeit.default_timer()
         sigmafound, siglosses, sigfuncs, sigolosses = svrgdescent(psi, \
-        dfpsi, initialguess, firsteta, tau=1e-4, epochs=int(200*1000/minibatches[i]), miter=minibatches[i], \
+        dfpsi, initialguess, firsteta, tau=1e-4, \
+        epochs=int(np.ceil(200*1000/(minibatches[i]+1000))), miter=minibatches[i], \
         naive=False, xi=xi, yi=yi, func=True)
         test_end_iter = timeit.default_timer()
         print(test_end_iter - test_start_iter )
+        print(sigolosses.shape)
         print()
 
         histsigfound[minibatches[i]] = sigmafound
@@ -275,6 +280,7 @@ def main():
         firsteta, epochs=200*1000/minibatches[i], miter=minibatches[i], tau=1e-4)
         test_end_iter = timeit.default_timer()
         print(test_end_iter - test_start_iter )
+        print(sigolosses[-1])
         print()
 
         histsigsgdfound[minibatches[i]] = sigmafound
@@ -289,70 +295,77 @@ def main():
     print(test_end_iter - test_start_iter )
     print()
 
-    fig, axs = plt.subplots(3, 3)
+    params = {'legend.fontsize': 'x-large',
+          'figure.figsize': (18, 9),
+         'axes.labelsize': 'x-large',
+         'axes.titlesize':'x-large',
+         'xtick.labelsize':'x-large',
+         'ytick.labelsize':'x-large'}
+    with mpl.rc_context(params):
+        fig, axs = plt.subplots(1, 3)
 
-    for j in range(3):
-        if j == 0:
-            plt.setp(axs[0, j], title = 'SGD')
-            plt.setp(axs[j, 0], ylabel='L(w) Values')
-        elif j == 1:
-            plt.setp(axs[0, j], title = 'Naive SVRG')
-            plt.setp(axs[j, 0], ylabel=r'||$\nabla$L(w)|| Values')
-        else:
-            plt.setp(axs[0, j], title = 'Random SVRG')
-            plt.setp(axs[j, 0], ylabel='||Δw|| Values')
-            plt.setp(axs[:, j], xlabel=r'Major Epochs (# of $\nabla$Ψ(w)/m)')
+        for j in range(3):
+            if j == 0:
+                # plt.setp(axs[j], title = 'SGD')
+                plt.setp(axs[j], ylabel='L(w) Values')
+            elif j == 1:
+                # plt.setp(axs[0, j], title = 'Naive SVRG')
+                plt.setp(axs[j], ylabel=r'||$\nabla$L(w)|| Values')
+            else:
+                # plt.setp(axs[0, j], title = 'Random SVRG')
+                plt.setp(axs[j], ylabel='||Δw|| Values')
+            plt.setp(axs[j], xlabel=r'Major Epochs (# of $\nabla$Ψ(w)/m)')
 
-        for i in range(3):
-            axs[i,j].plot(range(0, gdsigfuncs.shape[0], 1), gdsigfuncs, '-.', markeredgecolor="none", \
+            axs[j].plot(range(0, gdsigfuncs.shape[0], 1), gdsigfuncs, '-.', markeredgecolor="none", \
             label=f'Gradient Descent')
-            axs[i,j].set_yscale('log')
+            axs[j].set_yscale('log')
 
-    for mini in range(len(minibatches)):
-        gradn = int(1000/minibatches[mini])
-        sizes = histsigsgdfuncs[minibatches[mini]].shape[0]
-        axs[0, 0].plot(np.linspace(start=0, stop=(sizes/gradn), num=sizes), \
-        histsigsgdfuncs[minibatches[mini]], '-.', markeredgecolor="none",  \
-        label=f'minibatch size = {minibatches[mini]}')
+        for mini in range(len(minibatches)):
+            # gradn = int(1000/minibatches[mini])
+            # sizes = histsigsgdfuncs[minibatches[mini]][0:50].shape[0]
+            # axs[0].plot(np.linspace(start=0, stop=(sizes/gradn), num=sizes), \
+            # histsigsgdfuncs[minibatches[mini]][0:50], '-.', markeredgecolor="none",  \
+            # label=f'minibatch size = {minibatches[mini]}')
+            #
+            # axs[1].plot(np.linspace(start=0, stop=(sizes/gradn), num=sizes), \
+            # histsigsgdolosses[minibatches[mini]][0:50], '-.', markeredgecolor="none", \
+            # label=f'minibatch size = {minibatches[mini]}')
+            #
+            # axs[2].plot(np.linspace(start=0, stop=(sizes/gradn), num=sizes), \
+            # histsigsgdlosses[minibatches[mini]][0:50], '-.', markeredgecolor="none", \
+            # label=f'minibatch size = {minibatches[mini]}')
 
-        axs[1, 0].plot(np.linspace(start=0, stop=(sizes/gradn), num=sizes), \
-        histsigsgdolosses[minibatches[mini]], '-.', markeredgecolor="none", \
-        label=f'minibatch size = {minibatches[mini]}')
+            gradn = int(np.ceil(1000/(minibatches[mini]+1000)))
+            # sizes = histsignfuncs[minibatches[mini]][0:50].shape[0]
+            # axs[0].plot(np.linspace(start=0, stop=(sizes/gradn), num=sizes), \
+            # histsignfuncs[minibatches[mini]][0:50], '-.', markeredgecolor="none",  \
+            # label=f'minibatch size = {minibatches[mini]}')
+            #
+            # axs[1].plot(np.linspace(start=0, stop=(sizes/gradn), num=sizes), \
+            # histsignolosses[minibatches[mini]][0:50], '-.', markeredgecolor="none", \
+            # label=f'minibatch size = {minibatches[mini]}')
+            #
+            # axs[2].plot(np.linspace(start=0, stop=(sizes/gradn), num=sizes), \
+            # histsignolosses[minibatches[mini]][0:50], '-.', markeredgecolor="none", \
+            # label=f'minibatch size = {minibatches[mini]}')
+            #
+            sizes = histsigfuncs[minibatches[mini]][0:50].shape[0]
+            axs[0].plot(np.linspace(start=0, stop=(sizes/gradn), num=sizes), \
+            histsigfuncs[minibatches[mini]][0:50], '-.', markeredgecolor="none",  \
+            label=f'minibatch size = {minibatches[mini]}')
 
-        axs[2, 0].plot(np.linspace(start=0, stop=(sizes/gradn), num=sizes), \
-        histsigsgdlosses[minibatches[mini]], '-.', markeredgecolor="none", \
-        label=f'minibatch size = {minibatches[mini]}')
+            axs[1].plot(np.linspace(start=0, stop=(sizes/gradn), num=sizes), \
+            histsigolosses[minibatches[mini]][0:50], '-.', markeredgecolor="none", \
+            label=f'minibatch size = {minibatches[mini]}')
 
-        sizes = histsignfuncs[minibatches[mini]].shape[0]
-        axs[0, 1].plot(np.linspace(start=0, stop=(sizes/gradn), num=sizes), \
-        histsignfuncs[minibatches[mini]], '-.', markeredgecolor="none",  \
-        label=f'minibatch size = {minibatches[mini]}')
+            axs[2].plot(np.linspace(start=0, stop=(sizes/gradn), num=sizes), \
+            histsiglosses[minibatches[mini]][0:50], '-.', markeredgecolor="none", \
+            label=f'minibatch size = {minibatches[mini]}')
 
-        axs[1, 1].plot(np.linspace(start=0, stop=(sizes/gradn), num=sizes), \
-        histsignolosses[minibatches[mini]], '-.', markeredgecolor="none", \
-        label=f'minibatch size = {minibatches[mini]}')
+        # fig.set_size_inches(18, 18)
 
-        axs[2, 1].plot(np.linspace(start=0, stop=(sizes/gradn), num=sizes), \
-        histsignolosses[minibatches[mini]], '-.', markeredgecolor="none", \
-        label=f'minibatch size = {minibatches[mini]}')
-
-        sizes = histsigfuncs[minibatches[mini]].shape[0]
-        axs[0, 2].plot(np.linspace(start=0, stop=(sizes/gradn), num=sizes), \
-        histsigfuncs[minibatches[mini]], '-.', markeredgecolor="none",  \
-        label=f'minibatch size = {minibatches[mini]}')
-
-        axs[1, 2].plot(np.linspace(start=0, stop=(sizes/gradn), num=sizes), \
-        histsigolosses[minibatches[mini]], '-.', markeredgecolor="none", \
-        label=f'minibatch size = {minibatches[mini]}')
-
-        axs[2, 2].plot(np.linspace(start=0, stop=(sizes/gradn), num=sizes), \
-        histsiglosses[minibatches[mini]], '-.', markeredgecolor="none", \
-        label=f'minibatch size = {minibatches[mini]}')
-
-    fig.set_size_inches(18, 18)
-
-    plt.legend(bbox_to_anchor=(1,0.25), loc='upper left', ncol=1, title="Optimization Methods")
-    plt.savefig("toy_net.png", bbox_inches='tight')
+        plt.legend(bbox_to_anchor=(1,0.25), loc='upper left', ncol=1, title="Optimization Methods")
+        plt.savefig("toy_net_rsvrg.png", bbox_inches='tight')
 
     try:
         p = bokeh.plotting.figure(height=300, width=800, x_axis_label="Major Epochs (# of ∇Ψ(w)/m)", \
@@ -362,7 +375,7 @@ def main():
         for mini in minibatches:
             gradn = int(1000/mini)
             sizes = histsigfuncs[mini].shape[0]
-            p.line(np.linspace(start=0, stop=(sizes/gradn), num=sizes), \
+            p.line(np.linspace(start=0, stop=(50), num=sizes), \
             histsigfuncs[mini], color=next(colors), \
             legend_label=f'SVRG with minibatch size = {mini}')
         p.line(range(0, gdsigfuncs.shape[0], 1), gdsigfuncs, color = next(colors), \
@@ -388,7 +401,7 @@ def main():
         for mini in minibatches:
             gradn = int(1000/mini)
             sizes = histsigolosses[mini].shape[0]
-            p.line(np.linspace(start=0, stop=(sizes/gradn), num=sizes), \
+            p.line(np.linspace(start=0, stop=(50), num=sizes), \
             histsigolosses[mini], line_color=next(colors), \
             legend_label=f'SVRG with minibatch size = {mini}')
         p.line(range(0, gdsigolosses.shape[0], 1), gdsigolosses, line_color = next(colors), \
@@ -414,7 +427,7 @@ def main():
         for mini in minibatches:
             gradn = int(1000/mini)
             sizes = histsiglosses[mini].shape[0]
-            p.line(np.linspace(start=0, stop=(sizes/gradn), num=sizes), \
+            p.line(np.linspace(start=0, stop=(50), num=sizes), \
             histsiglosses[mini], line_color=next(colors), \
             legend_label=f'SVRG with minibatch size = {mini}')
         p.line(range(0, gdsiglosses.shape[0], 1), gdsiglosses, line_color = next(colors), \
@@ -440,7 +453,7 @@ def main():
         for mini in minibatches:
             gradn = int(1000/mini)
             sizes = histsigfuncs[mini].shape[0]
-            ax.plot(np.linspace(start=0, stop=(sizes/gradn), num=sizes), \
+            ax.plot(np.linspace(start=0, stop=(50), num=sizes), \
             histsigfuncs[mini], '-.', markeredgecolor="none",  \
             label=f'SGD with minibatch size = {mini}')
         ax.plot(range(0, gdsigfuncs.shape[0], 1), gdsigfuncs, '-.', markeredgecolor="none", \
@@ -457,7 +470,7 @@ def main():
         for mini in minibatches:
             gradn = int(1000/mini)
             sizes = histsiglosses[mini].shape[0]
-            ax.plot(np.linspace(start=0, stop=(sizes/gradn), num=sizes), \
+            ax.plot(np.linspace(start=0, stop=(50), num=sizes), \
             histsiglosses[mini], '-.', markeredgecolor="none",  \
             label=f'SGD with minibatch size = {mini}')
         ax.plot(range(0, gdsiglosses.shape[0], 1), gdsiglosses, '-.', markeredgecolor="none", \
@@ -474,7 +487,7 @@ def main():
         for mini in minibatches:
             gradn = int(1000/mini)
             sizes = histsigolosses[mini].shape[0]
-            ax.plot(np.linspace(start=0, stop=(sizes/gradn), num=sizes), \
+            ax.plot(np.linspace(start=0, stop=(50), num=sizes), \
             histsigolosses[mini], '-.', markeredgecolor="none",  \
             label=f'SGD with minibatch size = {mini}')
         ax.plot(range(0, gdsigolosses.shape[0], 1), gdsigolosses, '-.', markeredgecolor="none", \

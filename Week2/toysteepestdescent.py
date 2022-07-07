@@ -65,18 +65,23 @@ def backtracing(f, df, xk, pk, mu1, alf0, rho):
 
     return alf
 
-def steepestdescent(f, df, x0, tau, alf0, mu1, rho):
+def steepestdescent(f, df, x0, tau, alf0, mu1, rho, epochs =1100):
     k = 0
     xk = x0
     xhist = np.array([xk])
-    ahist = f(xk)
+    ahist = np.array([f(xk)])
     alfk = alf0
     dk = df(xk)
     pk = -dk
-    losses = np.array([np.linalg.norm(df(xk), ord=2)])
+    olosses = np.array([np.linalg.norm(df(xk), ord=2)])
+    change = x0+1
+    losses = np.array([np.linalg.norm(change-1, ord=2)])
 
 
-    while np.linalg.norm(df(xk), ord=2)/np.linalg.norm(xk, ord=2) > tau:
+    # while np.linalg.norm(df(xk), ord=2)/np.linalg.norm(xk, ord=2) > tau:
+    while np.linalg.norm(dfloss(xk), ord=2)/np.linalg.norm(xk, ord=2) > tau:
+        change = np.copy(xk)
+
         if k != 0:
             dk = df(xk)
             pk = -dk
@@ -85,19 +90,20 @@ def steepestdescent(f, df, x0, tau, alf0, mu1, rho):
 
         xhist = np.append(xhist, [xk], axis=0)
         ahist = np.append(ahist, [f(xk)])
-        losses = np.append(losses, [np.linalg.norm(df(xk), ord=2)/np.linalg.norm(xk, ord=2)])
+        olosses = np.append(olosses, [np.linalg.norm(df(xk), ord=2)/np.linalg.norm(xk, ord=2)])
+        losses = np.append(losses, [np.linalg.norm(change - xk, ord=2) / np.linalg.norm(xk, ord=2)])
 
         k += 1
-        if k == 1100:
+        if k == epochs:
             print("Failed to converge")
             break
 
-    return xhist, losses, ahist
+    return xhist, losses, ahist, olosses
 
 def main():
     test_start_iter = timeit.default_timer()
     initialguess = 2.25*np.ones(shape=(xi[1].shape[0]+1,))
-    sigmafound, siglosses, sigfuncs = steepestdescent(loss, dfloss, initialguess, .01, 1, 1e-5, .5)
+    sigmafound, siglosses, sigfuncs, sigolosses = steepestdescent(loss, dfloss, initialguess, 1e-7, 1, 1e-5, .5, epochs=10000)
     test_end_iter = timeit.default_timer()
     print(test_end_iter - test_start_iter )
 
@@ -105,11 +111,12 @@ def main():
     print(sigmafound[-1])
     print(sigfuncs[-1])
     print(siglosses[-1])
+    print(sigolosses[-1])
 
     xib = np.concatenate((xi, np.ones((xi.shape[0], 1))), 1)
     d = (xib.T @ xib)+ 0.0001*np.identity(xib.shape[1])
     theta_star = np.linalg.lstsq(d, xib.T @ yi, rcond=None)
-    true_objective = loss(theta_star[0])
+    true_objective = np.linalg.norm(dfloss(theta_star[0]), ord=2)
 
     print("A\\b Values")
     print(theta_star[0])
@@ -119,7 +126,7 @@ def main():
         p = bokeh.plotting.figure(height=300, width=800, x_axis_label="Number of iterations", \
                           y_axis_label="||∇L(w)|| Values", title="||∇L(w)|| vs. Number Iterations for GD", \
                           y_axis_type="log")
-        p.line(range(0, siglosses.shape[0], 1), siglosses, line_color="navy")
+        p.line(range(0, sigolosses.shape[0], 1), sigolosses, line_color="navy")
         p.xgrid.grid_line_color = None
         p.ygrid.grid_line_color = None
         p.title.align = "center"
@@ -132,7 +139,7 @@ def main():
         print("Unable to use bokeh. Using matplotlib instead")
         fig = plt.figure()
         ax = plt.gca()
-        ax.plot(range(0, siglosses.shape[0], 1), siglosses, '-o', markeredgecolor="none")
+        ax.plot(range(0, sigolosses.shape[0], 1), sigolosses, '-o', markeredgecolor="none")
         ax.set_yscale('log')
         plt.title("||∇L(w)|| vs. Number Iterations for GD")
         plt.xlabel("Number of iterations")
