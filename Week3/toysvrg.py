@@ -61,29 +61,67 @@ def dfpsi(sig, j, lam=1e-4):
 
     return derivs
 
+def multipsi(sig, inds, lam=1e-4):
+    sumi = lam*(sig.T @ sig)
+    chosenxi = np.take(xi, inds)
+    chosenyi = np.take(yi, inds)
+    xi_til = np.hstack((chosenxi, np.ones((chosenxi.shape[0],1))))
+    netsum = np.mean((xi_til @ sig - chosenyi)**2)
+    sumi += netsum
+
+    return sumi/2
+
+def dfmultipsi(sig, inds, lam=1e-4):
+    chosenxi = np.take(xi, inds)
+    chosenyi = np.take(yi, inds)
+    xi_til = np.hstack((chosenxi, np.ones((chosenxi.shape[0],1))))
+    derivs  = (xi_til @ sig - chosenyi) @ xi_til
+
+    derivs += lam * sig.T
+
+    return derivs/chosenxi.shape[0]
+
 def phi(f, xk, pk, a):
     return f(xk+a*pk)
 
 def phipr(df, xk, pk, a):
     return (df(xk + a*pk).T @ pk)
 
-def backtracing(f, df, xk, pk, mu1, alf0, rho):
+def multiphi(f, xk, pk, a, inds):
+    return f(xk+a*pk, inds)
+
+def multiphipr(df, xk, pk, a, inds):
+    return (df(xk + a*pk).T @ pk, inds)
+
+def backtracing(f, df, xk, pk, mu1, alf0, rho, multilin=False):
     alf = alf0
     ahist = alf0
 
-    for i in range(100):
-        if phi(f, xk, pk, alf) <= phi(f, xk, pk, 0) + mu1*alf*phipr(df, xk, pk, 0):
-            break
-        alf = rho*alf
-        ahist = np.append(ahist, alf)
-        if i == 99:
-            print('Backtracking exited without satsifying Armijo condition.')
-            return alf
+    if multilin:
+        for i in range(100):
+            if multiphi(f, xk, pk, alf) <= multiphi(f, xk, pk, 0) + \
+            mu1*alf*multiphipr(df, xk, pk, 0):
+                break
+            alf = rho*alf
+            ahist = np.append(ahist, alf)
+            if i == 99:
+                print('Backtracking exited without satsifying Armijo condition.')
+                return alf
+    else:
+        for i in range(100):
+            if phi(f, xk, pk, alf) <= phi(f, xk, pk, 0) + mu1*alf*phipr(df, xk, pk, 0):
+                break
+            alf = rho*alf
+            ahist = np.append(ahist, alf)
+            if i == 99:
+                print('Backtracking exited without satsifying Armijo condition.')
+                return alf
 
     return alf
 
-def sgdescent(f, df, x0, etait, epochs=1000, miter=50, tau=1e-4):
+def sgdescent(f, df, x0, etait, epochs=1000, miter=50, tau=1e-4, linesearch=True):
     k = 0
+    maxes = xi.shape[0]
     xk = np.copy(x0)
     xhist = np.array([xk])
     change = x0+1
@@ -92,18 +130,39 @@ def sgdescent(f, df, x0, etait, epochs=1000, miter=50, tau=1e-4):
     ahist = np.array([loss(xk)])
     olosses = np.array([np.linalg.norm(dfloss(xk), ord=2)/np.linalg.norm(xk, ord=2)])
 
+    if linesearch:
+        alfk = 1
+        mu1 = 1e-5
+        rho = .5
 
     while losses[-1] > tau:
         change = np.copy(xk)
 
-        if k >= 3:
-            alfk = etait(k)
-        else:
-            alfk = 1/(k+3)
+        chosen = np.random.choice(xi.shape[0], maxes, replace=False)
+        for m in range(maxes):
+            if m % miter == 0:
+                if linesearch:
+                    if miter > 1:
+                        pk = df(xk, chosen[m:m+miter-1])
+                        alfk = backtracing(multipsi, dfmultipsi, xk, pk, mu1, \
+                        alfk, rho, multilin=True)
+                    else:
+                        pk = df(xk, chosen[m])
+                        alfk = backtracing(f, df, xk, pk, mu1, alfk, \
+                        rho, multilin=True)
 
-        chosen = np.random.choice(xi.shape[0], miter, replace=False)
-        for m in range(miter):
-            xk -= alfk*df(xk, chosen[m])/miter
+                else:
+                    if k >= 100:
+                        alfk = etait(k)
+                    else:
+                        alfk = 1/100
+
+                minibatch = alfk*df(xk, chosen[m])
+            else:
+                minibatch += alfk*df(xk, chosen[m])
+
+            if m % miter == miter-1:
+                xk -= minibatch/miter
 
         xhist = np.append(xhist, [xk], axis=0)
         losses = np.append(losses, [np.linalg.norm(change - xk, ord=2) / np.linalg.norm(xk, ord=2)])
@@ -140,7 +199,11 @@ def svrgdescent(f, df, x0, etait, tau=1e-4, epochs=1000, miter=100, naive=True, 
     ahist = np.array([loss(xs)])
     chosen = np.random.choice(xi.shape[0])
     olosses = np.array([np.linalg.norm(df(xs, chosen), ord=2)])
+    etas = [1/1000, 1/500, 1/80, 1/30, 1/20]
+    miters = [1, 10, 50, 100, 1000]
 
+    ind = miters.index(miter)
+    maxes = xi.shape[0]
 
     for s in range(epochs):
         xk = np.copy(xs)
@@ -149,8 +212,8 @@ def svrgdescent(f, df, x0, etait, tau=1e-4, epochs=1000, miter=100, naive=True, 
         mu *= 0
 
         if func:
-            if k < 3:
-                eta = 1/(k+3)
+            if k < maxes:
+                eta = etas[ind]
             else:
                 eta = etait(k)
         else:
@@ -161,19 +224,23 @@ def svrgdescent(f, df, x0, etait, tau=1e-4, epochs=1000, miter=100, naive=True, 
 
         mu /= (xi.shape[1]+1)
         saved = np.array([xk])
-        chosen = np.random.choice(xi.shape[0], miter, replace=False)
+        chosen = np.random.choice(xi.shape[0], maxes, replace=False)
 
-        for m in range(miter):
-            step = eta*(df(xk, chosen[m]) - df(xs, chosen[m]) + mu)/miter
-            print(step)
-            xk -= step
-            saved = np.append(saved, [xk], axis=0)
+        for m in range(maxes):
+            if m % miter == 0:
+                minibatch = eta*(df(xk, chosen[m]) - df(xs, chosen[m]) + mu)
+            else:
+                minibatch += eta*(df(xk, chosen[m]) - df(xs, chosen[m]) + mu)
+
+            if m % miter == miter-1:
+                xk -= minibatch/miter
+                saved = np.append(saved, [xk], axis=0)
 
         olosses = np.append(olosses, [np.linalg.norm(mu, ord=2)/np.linalg.norm(xs, ord=2)])
         if naive:
             xs = xk
         else:
-            chosen = np.random.choice(miter)
+            chosen = np.random.choice(int(maxes/miter))
             xs = saved[chosen]
 
         xhist = np.append(xhist, [xs], axis=0)
@@ -202,7 +269,6 @@ def steepestdescent(f, df, x0, tau, alf0, mu1, rho, epochs =1100):
     change = x0+1
     losses = np.array([np.linalg.norm(change-1, ord=2)])
 
-
     # while np.linalg.norm(df(xk), ord=2)/np.linalg.norm(xk, ord=2) > tau:
     while np.linalg.norm(dfloss(xk), ord=2)/np.linalg.norm(xk, ord=2) > tau:
         change = np.copy(xk)
@@ -211,6 +277,10 @@ def steepestdescent(f, df, x0, tau, alf0, mu1, rho, epochs =1100):
             dk = df(xk)
             pk = -dk
         alfk = backtracing(f, df, xk, pk, mu1, alfk, rho)
+        if k > 100:
+            alfk = 1/k
+        else:
+            alfk = 1/100
         xk = xk + alfk*pk
 
         xhist = np.append(xhist, [xk], axis=0)
@@ -238,7 +308,7 @@ def main():
         test_start_iter = timeit.default_timer()
         sigmafound, siglosses, sigfuncs, sigolosses = svrgdescent(psi, \
         dfpsi, initialguess, firsteta, tau=1e-4, \
-        epochs=int(np.ceil(200*1000/(minibatches[i]+1000))), miter=minibatches[i], \
+        epochs=200, miter=minibatches[i], \
         naive=True, xi=xi, yi=yi, func=True)
         test_end_iter = timeit.default_timer()
         print(test_end_iter - test_start_iter )
@@ -259,7 +329,7 @@ def main():
         test_start_iter = timeit.default_timer()
         sigmafound, siglosses, sigfuncs, sigolosses = svrgdescent(psi, \
         dfpsi, initialguess, firsteta, tau=1e-4, \
-        epochs=int(np.ceil(200*1000/(minibatches[i]+1000))), miter=minibatches[i], \
+        epochs=200, miter=minibatches[i], \
         naive=False, xi=xi, yi=yi, func=True)
         test_end_iter = timeit.default_timer()
         print(test_end_iter - test_start_iter )
@@ -279,7 +349,7 @@ def main():
         print(f'SGD with minibatch size = {minibatches[i]}')
         test_start_iter = timeit.default_timer()
         sigmafound, siglosses, sigfuncs, sigolosses = sgdescent(psi, dfpsi, initialguess, \
-        firsteta, epochs=200*1000/minibatches[i], miter=minibatches[i], tau=1e-4)
+        firsteta, epochs=200, miter=minibatches[i], tau=1e-4)
         test_end_iter = timeit.default_timer()
         print(test_end_iter - test_start_iter )
         print(sigolosses[-1])
@@ -304,70 +374,79 @@ def main():
          'xtick.labelsize':'x-large',
          'ytick.labelsize':'x-large'}
     with mpl.rc_context(params):
-        fig, axs = plt.subplots(1, 3)
+        fig, axs = plt.subplots(3, 3)
 
         for j in range(3):
             if j == 0:
-                # plt.setp(axs[j], title = 'SGD')
-                plt.setp(axs[j], ylabel='L(w) Values')
+                plt.setp(axs[0, j], title = 'SGD')
+                plt.setp(axs[j, 0], ylabel='L(w) Values')
             elif j == 1:
-                # plt.setp(axs[0, j], title = 'Naive SVRG')
-                plt.setp(axs[j], ylabel=r'||$\nabla$L(w)|| Values')
+                plt.setp(axs[0, j], title = 'Naive SVRG')
+                plt.setp(axs[j, 0], ylabel=r'||$\nabla$L(w)|| Values')
             else:
-                # plt.setp(axs[0, j], title = 'Random SVRG')
-                plt.setp(axs[j], ylabel='||Δw|| Values')
-            plt.setp(axs[j], xlabel=r'Major Epochs (# of $\nabla$Ψ(w)/m)')
+                plt.setp(axs[0, j], title = 'Random SVRG')
+                plt.setp(axs[j, 0], ylabel='||Δw|| Values')
+            plt.setp(axs[:, j], xlabel=r'Major Epochs (# of $\nabla$Ψ(w)/m)')
 
-            axs[j].plot(range(0, gdsigfuncs.shape[0], 1), gdsigfuncs, '-.', markeredgecolor="none", \
+            axs[0,j].plot(range(0, gdsigfuncs.shape[0], 1), gdsigfuncs, '-.', markeredgecolor="none", \
             label=f'Gradient Descent')
-            axs[j].set_yscale('log')
+            axs[0,j].set_yscale('log')
+
+            axs[1,j].plot(range(0, gdsigfuncs.shape[0], 1), gdsigolosses, '-.', markeredgecolor="none", \
+            label=f'Gradient Descent')
+            axs[1,j].set_yscale('log')
+
+            axs[2,j].plot(range(0, gdsigfuncs.shape[0], 1), gdsiglosses, '-.', markeredgecolor="none", \
+            label=f'Gradient Descent')
+            axs[2,j].set_yscale('log')
+
 
         for mini in range(len(minibatches)):
             # gradn = int(1000/minibatches[mini])
-            # sizes = histsigsgdfuncs[minibatches[mini]][0:50].shape[0]
-            # axs[0].plot(np.linspace(start=0, stop=(sizes/gradn), num=sizes), \
-            # histsigsgdfuncs[minibatches[mini]][0:50], '-.', markeredgecolor="none",  \
-            # label=f'minibatch size = {minibatches[mini]}')
-            #
-            # axs[1].plot(np.linspace(start=0, stop=(sizes/gradn), num=sizes), \
-            # histsigsgdolosses[minibatches[mini]][0:50], '-.', markeredgecolor="none", \
-            # label=f'minibatch size = {minibatches[mini]}')
-            #
-            # axs[2].plot(np.linspace(start=0, stop=(sizes/gradn), num=sizes), \
-            # histsigsgdlosses[minibatches[mini]][0:50], '-.', markeredgecolor="none", \
-            # label=f'minibatch size = {minibatches[mini]}')
-
-            gradn = int(np.ceil(1000/(minibatches[mini]+1000)))
-            # sizes = histsignfuncs[minibatches[mini]][0:50].shape[0]
-            # axs[0].plot(np.linspace(start=0, stop=(sizes/gradn), num=sizes), \
-            # histsignfuncs[minibatches[mini]][0:50], '-.', markeredgecolor="none",  \
-            # label=f'minibatch size = {minibatches[mini]}')
-            #
-            # axs[1].plot(np.linspace(start=0, stop=(sizes/gradn), num=sizes), \
-            # histsignolosses[minibatches[mini]][0:50], '-.', markeredgecolor="none", \
-            # label=f'minibatch size = {minibatches[mini]}')
-            #
-            # axs[2].plot(np.linspace(start=0, stop=(sizes/gradn), num=sizes), \
-            # histsignolosses[minibatches[mini]][0:50], '-.', markeredgecolor="none", \
-            # label=f'minibatch size = {minibatches[mini]}')
-            #
-            sizes = histsigfuncs[minibatches[mini]][0:50].shape[0]
-            axs[0].plot(np.linspace(start=0, stop=(sizes/gradn), num=sizes), \
-            histsigfuncs[minibatches[mini]][0:50], '-.', markeredgecolor="none",  \
+            sizes = histsigsgdfuncs[minibatches[mini]].shape[0]
+            axs[0, 0].plot(range(0, sizes, 1), \
+            histsigsgdfuncs[minibatches[mini]], '-.', markeredgecolor="none",  \
             label=f'minibatch size = {minibatches[mini]}')
 
-            axs[1].plot(np.linspace(start=0, stop=(sizes/gradn), num=sizes), \
-            histsigolosses[minibatches[mini]][0:50], '-.', markeredgecolor="none", \
+            axs[1, 0].plot(range(0, sizes, 1), \
+            histsigsgdolosses[minibatches[mini]], '-.', markeredgecolor="none", \
             label=f'minibatch size = {minibatches[mini]}')
 
-            axs[2].plot(np.linspace(start=0, stop=(sizes/gradn), num=sizes), \
-            histsiglosses[minibatches[mini]][0:50], '-.', markeredgecolor="none", \
+            axs[2, 0].plot(range(0, sizes, 1), \
+            histsigsgdlosses[minibatches[mini]], '-.', markeredgecolor="none", \
             label=f'minibatch size = {minibatches[mini]}')
 
-        # fig.set_size_inches(18, 18)
+            # gradn = int(np.ceil(1000/(minibatches[mini]+1000)))
+            sizes = histsignfuncs[minibatches[mini]].shape[0]
+            axs[0, 1].plot(range(0, 2*sizes, 2), \
+            histsignfuncs[minibatches[mini]], '-.', markeredgecolor="none",  \
+            label=f'minibatch size = {minibatches[mini]}')
+
+            axs[1, 1].plot(range(0, 2*sizes, 2), \
+            histsignolosses[minibatches[mini]], '-.', markeredgecolor="none", \
+            label=f'minibatch size = {minibatches[mini]}')
+
+            axs[2, 1].plot(range(0, 2*sizes, 2), \
+            histsignolosses[minibatches[mini]], '-.', markeredgecolor="none", \
+            label=f'minibatch size = {minibatches[mini]}')
+
+            sizes = histsigfuncs[minibatches[mini]].shape[0]
+            axs[0, 2].plot(range(0, 2*sizes, 2), \
+            histsigfuncs[minibatches[mini]], '-.', markeredgecolor="none",  \
+            label=f'minibatch size = {minibatches[mini]}')
+
+            axs[1, 2].plot(range(0, 2*sizes, 2), \
+            histsigolosses[minibatches[mini]], '-.', markeredgecolor="none", \
+            label=f'minibatch size = {minibatches[mini]}')
+
+            axs[2, 2].plot(range(0, 2*sizes, 2), \
+            histsiglosses[minibatches[mini]], '-.', markeredgecolor="none", \
+            label=f'minibatch size = {minibatches[mini]}')
+
+        fig.set_size_inches(18, 18)
 
         plt.legend(bbox_to_anchor=(1,0.25), loc='upper left', ncol=1, title="Optimization Methods")
-        plt.savefig("toy_net_rsvrg.png", bbox_inches='tight')
+        plt.savefig("toy_net.png", bbox_inches='tight')
 
     try:
         p = bokeh.plotting.figure(height=300, width=800, x_axis_label="Major Epochs (# of ∇Ψ(w)/m)", \

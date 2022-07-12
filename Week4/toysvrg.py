@@ -84,6 +84,7 @@ def backtracing(f, df, xk, pk, mu1, alf0, rho):
 
 def sgdescent(f, df, x0, etait, epochs=1000, miter=50, tau=1e-4):
     k = 0
+    maxes = xi.shape[0]
     xk = np.copy(x0)
     xhist = np.array([xk])
     change = x0+1
@@ -92,17 +93,16 @@ def sgdescent(f, df, x0, etait, epochs=1000, miter=50, tau=1e-4):
     ahist = np.array([loss(xk)])
     olosses = np.array([np.linalg.norm(dfloss(xk), ord=2)/np.linalg.norm(xk, ord=2)])
 
-
     while losses[-1] > tau:
         change = np.copy(xk)
 
         if k >= 100:
             alfk = etait(k)
         else:
-            alfk = 1/(100)
+            alfk = 1/100
 
-        chosen = np.random.choice(xi.shape[0], 1000, replace=False)
-        for m in range(1000):
+        chosen = np.random.choice(xi.shape[0], maxes, replace=False)
+        for m in range(maxes):
             if m % miter == 0:
                 minibatch = alfk*df(xk, chosen[m])
             else:
@@ -146,7 +146,11 @@ def svrgdescent(f, df, x0, etait, tau=1e-4, epochs=1000, miter=100, naive=True, 
     ahist = np.array([loss(xs)])
     chosen = np.random.choice(xi.shape[0])
     olosses = np.array([np.linalg.norm(df(xs, chosen), ord=2)])
+    etas = [1/1000, 1/500, 1/80, 1/30, 1/20]
+    miters = [1, 10, 50, 100, 1000]
 
+    ind = miters.index(miter)
+    maxes = xi.shape[0]
 
     for s in range(epochs):
         xk = np.copy(xs)
@@ -155,8 +159,8 @@ def svrgdescent(f, df, x0, etait, tau=1e-4, epochs=1000, miter=100, naive=True, 
         mu *= 0
 
         if func:
-            if k < 1000:
-                eta = 1/(1000)
+            if k < maxes:
+                eta = etas[ind]
             else:
                 eta = etait(k)
         else:
@@ -167,9 +171,9 @@ def svrgdescent(f, df, x0, etait, tau=1e-4, epochs=1000, miter=100, naive=True, 
 
         mu /= (xi.shape[1]+1)
         saved = np.array([xk])
-        chosen = np.random.choice(xi.shape[0], 1000, replace=False)
+        chosen = np.random.choice(xi.shape[0], maxes, replace=False)
 
-        for m in range(1000):
+        for m in range(maxes):
             if m % miter == 0:
                 minibatch = eta*(df(xk, chosen[m]) - df(xs, chosen[m]) + mu)
             else:
@@ -183,7 +187,7 @@ def svrgdescent(f, df, x0, etait, tau=1e-4, epochs=1000, miter=100, naive=True, 
         if naive:
             xs = xk
         else:
-            chosen = np.random.choice(int(1000/miter))
+            chosen = np.random.choice(int(maxes/miter))
             xs = saved[chosen]
 
         xhist = np.append(xhist, [xs], axis=0)
@@ -220,7 +224,11 @@ def steepestdescent(f, df, x0, tau, alf0, mu1, rho, epochs =1100):
         if k != 0:
             dk = df(xk)
             pk = -dk
-        alfk = backtracing(f, df, xk, pk, mu1, alfk, rho)
+        # alfk = backtracing(f, df, xk, pk, mu1, alfk, rho)
+        if k > 100:
+            alfk = 1/k
+        else:
+            alfk = 1/100
         xk = xk + alfk*pk
 
         xhist = np.append(xhist, [xk], axis=0)

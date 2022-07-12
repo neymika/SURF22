@@ -135,3 +135,12 @@
         cd Week1
         python3 toymultifidelity.py
         ```
+  ## :sweat: :broken_heart: Week 5...
+    * 7/11: Kept trying to debug code using toysvrg.py from Week 4. Determined that some of the convergence rate comparisons made with GD were different when GD used the backtracking line search method to determine the step size vs. the SGD step size schedule. Read a 42 (more like 33) page survey paper of multi-fidelity methods. Very interesting! Learned a lot about the different types of low-fidelity models (simplified, projection-based, and data-fit models), model management strategies (adaptation, fusion, and filtering), and applications (uncertainty propagation, statistical inference, and optimization).
+    * 7/12: Discussed the survey paper. Many questions were answered. Unfortunately, I still have the issue where I fail to phrase things well. Be it in discussion or writing :( Honestly its very disheartening that I cannot seem to improve in this aspect which is vital in industry and grad school... In any case, I am implementing a line search method for the stochastic methods to see if I can make more viable comparisons to GD with backtracking.
+      * I did a thing! Managed to implement the line search but the results are very confusing. ~~Now trying to plot~~ Managed to plot L(w) vs. grad psi_i/n (from algorithm and line search) + psi_i/n (from line search). While I recognize that psi_i may not have the same computational cost as grad psi_i, I think this is an interesting comparison to make by empirically approximating the two to be equal. Later I will try to make them equal theoretically as well. ** UPDATE ** Managed to plot, but no real added info :sob:
+      * To run sgd + gd with backtracking files:
+        * ```python
+          cd Week3
+          python3 toysvrg.py
+          ```
