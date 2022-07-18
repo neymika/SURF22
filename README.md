@@ -155,4 +155,17 @@
       * For proper comparisons of Pan parameters for all methods, please see toy_panparam.png
       * For proper comparisons of SVRG with "ideal" Pan parameters v.s. optimal fixed scheduling methods, please see toy_idealnewparam.png
   ## :pensive: :sweat_drops: Week 6
-    * 7/18 Reran the ideal SGD
+    * 7/18 Reran the ideal SGD with better optimal parameter checking conditions (avoid overflow issues and not use terminating condition necessarily). Plan for today is to produce plots of L vs t and ||nabla L(w)|| vs t for both SGD and GD when varying both parameters logarithmically and then comparing within methods rather than between methods. ** UPDATE ** Done!
+      * To run the code to produce the plots for SGD method:
+        * ```python
+          cd Week6
+          python3 sgdvaried.py
+          python3 sgdvariedplots.py
+          ```
+      * To run the code to produce the plots for SGD method:
+        * ```python
+        cd Week6
+        python3 sgdvaried.py
+        python3 sgdvariedplots.py
+        ```
+    *
