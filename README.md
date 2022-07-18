@@ -141,6 +141,18 @@
       * I did a thing! Managed to implement the line search but the results are very confusing. ~~Now trying to plot~~ Managed to plot L(w) vs. grad psi_i/n (from algorithm and line search) + psi_i/n (from line search). While I recognize that psi_i may not have the same computational cost as grad psi_i, I think this is an interesting comparison to make by empirically approximating the two to be equal. Later I will try to make them equal theoretically as well. ** UPDATE ** Managed to plot, but no real added info :sob:
       * To run sgd + gd with backtracking files:
         * ```python
-          cd Week3
+          cd Week5
           python3 toysvrg.py
           ```
+    * 7/13: Just keep swimming, just keep swimming... Since the backtracking results were less than ideal to put it mildly, we are switching back to GD having the same step size schedule as SGD and then comparing. Going to use Pan's optimal values and then compare with SGD and GD to see if performance improves, which would indicate there is some sort of tradeoff. Later, if this works, would finetune by controlling all parameters than varying the SVRG batch size parameters only in btwn the two.
+      * ** UPDATE ** Compared with SGD and GD with step size dependent on prior scheduling method. Works EXACTLY as intended woooooot (see toy_idealparam.png). Going to try and optimize the constant step size parameter for SGD and GD next then compare.
+      * To run Pan optimized SVRG method:
+        * ```python
+          cd Week5
+          python3 toypan.py
+          ```
+    * 7/14 Instead of trying to optimize the constant step size parameter alone then number of iterations/epochs the constant step size is used for SGD and GD, I am using a grid based approach albeit with less accuracy to determine better step size schedule parameters. I tried paralleling the process for GD using ray, but perhaps due to memory spilling and/or limited CPU capability, the results seemed bizarre and perhaps inaccurate. As such, I am running the grid search sequentially instead, rerunning the grid search in parallel, and then comparing the results. All in all, the sequential method is veryyyyy slow compared to the parallel version (~~has been running for about 1.5 hours~~ Took 4 hours to run! Parallel took 3... Redid with smaller range of fixed eta epochs (1-20)). I wish Pan would respond back so I can ask for help, but I know he has other priorities now that he is in Beijing :persevere:
+      * For proper comparisons of Pan parameters for all methods, please see toy_panparam.png
+      * For proper comparisons of SVRG with "ideal" Pan parameters v.s. optimal fixed scheduling methods, please see toy_idealnewparam.png
+  ## :pensive: :sweat_drops: Week 6
+    * 7/18 Reran the ideal SGD

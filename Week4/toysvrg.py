@@ -175,12 +175,12 @@ def svrgdescent(f, df, x0, etait, tau=1e-4, epochs=1000, miter=100, naive=True, 
 
         for m in range(maxes):
             if m % miter == 0:
-                minibatch = eta*(df(xk, chosen[m]) - df(xs, chosen[m]) + mu)
+                minibatch = eta*(df(xk, chosen[m]) - df(xs, chosen[m]))
             else:
-                minibatch += eta*(df(xk, chosen[m]) - df(xs, chosen[m]) + mu)
+                minibatch += eta*(df(xk, chosen[m]) - df(xs, chosen[m]))
 
             if m % miter == miter-1:
-                xk -= minibatch/miter
+                xk -= (eta*mu + minibatch/miter)
                 saved = np.append(saved, [xk], axis=0)
 
         olosses = np.append(olosses, [np.linalg.norm(mu, ord=2)/np.linalg.norm(xs, ord=2)])
