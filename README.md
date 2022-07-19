@@ -162,10 +162,10 @@
           python3 sgdvaried.py
           python3 sgdvariedplots.py
           ```
-      * To run the code to produce the plots for SGD method:
+      * To run the code to produce the plots for GD method:
         * ```python
         cd Week6
-        python3 sgdvaried.py
-        python3 sgdvariedplots.py
+        python3 gdvaried.py
+        python3 gdvariedplots.py
         ```
-    *
+    * 7/19 Debugged prior code (toypan.py and sgdvaried.py). Will now perform a similar comparison for SVRG as detailed in week6todo.png
