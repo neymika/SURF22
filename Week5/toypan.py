@@ -74,7 +74,7 @@ epochs=200, miter=100, tau=1e-4, fixval = 1/100, fixiter=100):
     losses = np.array([np.linalg.norm(change-1, ord=2)])
     np.random.seed(2022)
     ahist = np.array([loss(xk)])
-    olosses = np.array([np.linalg.norm(dfloss(xk), ord=2)/np.linalg.norm(xk, ord=2)])
+    olosses = np.array([np.linalg.norm(dfloss(xk), ord=2)])
 
     while losses[-1] > tau:
         change = np.copy(xk)
@@ -100,7 +100,7 @@ epochs=200, miter=100, tau=1e-4, fixval = 1/100, fixiter=100):
 
         xhist = np.append(xhist, [xk], axis=0)
         losses = np.append(losses, [np.linalg.norm(change - xk, ord=2) / np.linalg.norm(xk, ord=2)])
-        olosses = np.append(olosses, [np.linalg.norm(dfloss(xk), ord=2)/np.linalg.norm(xk, ord=2)])
+        olosses = np.append(olosses, [np.linalg.norm(dfloss(xk), ord=2)])
         ahist = np.append(ahist, [loss(xk)])
 
         change -= xk
@@ -130,11 +130,16 @@ minibatch_size, tau=1e-4):
         change = np.copy(xs)
         epoch_choice = np.random.choice(xi.shape[0], batch_size, replace=False)
 
+        if s > 100:
+            alfk = step_size
+        else:
+            alfk = 1/100
+
         mu *= 0
-        saved = np.array([xs - step_size*mu])
         for i in range(1, epoch_choice.shape[0]):
             mu += dfpsi(xs, i)
         mu /= epoch_choice.shape[0]
+        saved = np.array([xs - alfk*mu])
 
         for iter in range(epoch_size):
             select = np.random.choice(xi.shape[0], minibatch_size, replace=False)
@@ -144,9 +149,9 @@ minibatch_size, tau=1e-4):
             bmu /= minibatch_size
             diff = mu + bmu
 
-            saved = np.append(saved, [saved[iter-1]-diff], axis=0)
+            saved = np.append(saved, [saved[iter-1]-alfk*diff], axis=0)
 
-        olosses = np.append(olosses, [np.linalg.norm(mu, ord=2)/np.linalg.norm(xs, ord=2)])
+        olosses = np.append(olosses, [np.linalg.norm(mu, ord=2)])
 
         xs = saved[np.random.choice(int(epoch_size))]
 
@@ -154,7 +159,7 @@ minibatch_size, tau=1e-4):
         losses = np.append(losses, [np.linalg.norm(change - xs, ord=2)])
         ahist = np.append(ahist, [loss(xs)])
 
-        if losses[-1] < tau:
+        if olosses[-1] < tau:
             break
 
     return xhist, losses, ahist, olosses
@@ -212,7 +217,7 @@ fixval = 1/100, fixiter = 100, epochs =1100):
 
         xhist = np.append(xhist, [xk], axis=0)
         ahist = np.append(ahist, [f(xk)])
-        olosses = np.append(olosses, [np.linalg.norm(df(xk), ord=2)/np.linalg.norm(xk, ord=2)])
+        olosses = np.append(olosses, [np.linalg.norm(df(xk), ord=2)])
         losses = np.append(losses, [np.linalg.norm(change - xk, ord=2) / np.linalg.norm(xk, ord=2)])
 
         k += 1
@@ -266,7 +271,7 @@ def main():
     n = 10000
     b = 100
     m = 100
-    s = 100
+    s = 200
     initialguess = np.ones(shape=(xi[1].shape[0]+1,))
 
     print("SVRG")
@@ -281,7 +286,7 @@ def main():
     test_start_iter = timeit.default_timer()
     gdsigmafound, gdsiglosses, gdsigfuncs, gdsigolosses = \
     steepestdescent(loss, dfloss, initialguess, 1e-4, 1, 1e-5, \
-    .5, fixval = 1, fixiter = 3, epochs=s)
+    .5, fixval = 1/100, fixiter = 100, epochs=s)
     test_end_iter = timeit.default_timer()
     print(test_end_iter - test_start_iter )
     print()
@@ -289,8 +294,8 @@ def main():
     print("SGD")
     test_start_iter = timeit.default_timer()
     sigsgdfound, sigsgdlosses, sigsgdfuncs, sigsgdolosses = \
-    sgdescent(psi, dfpsi, initialguess, firsteta, fixval=1/72, \
-    fixiter=19, epochs=s)
+    sgdescent(psi, dfpsi, initialguess, firsteta, fixval=1/100, \
+    fixiter=100, epochs=s)
     test_end_iter = timeit.default_timer()
     print(test_end_iter - test_start_iter )
     print()
@@ -351,7 +356,7 @@ def main():
         sigsgdlosses, '-.', alpha=.8, label=f'SGD')
 
         plt.legend(bbox_to_anchor=(1,0.25), loc='upper left', ncol=1, title="Optimization Methods")
-        plt.savefig("toy_idealnewparam.png", bbox_inches='tight')
+        plt.savefig("toy_idealwtfparam.png", bbox_inches='tight')
 
 
 if __name__ == "__main__":

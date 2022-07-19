@@ -74,13 +74,13 @@ epochs=200, miter=100, tau=1e-4, fixval = 1/100, fixiter=100):
     losses = np.array([np.linalg.norm(change-1, ord=2)])
     np.random.seed(2022)
     ahist = np.array([loss(xk)])
-    olosses = np.array([np.linalg.norm(dfloss(xk), ord=2)/np.linalg.norm(xk, ord=2)])
+    olosses = np.array([np.linalg.norm(dfloss(xk), ord=2)])
 
     while losses[-1] > tau:
         change = np.copy(xk)
         # alfk = fixval
 
-        if k >fixiter:
+        if k > fixiter:
             alfk = fixval/(k-fixiter)
         else:
             alfk = fixval
@@ -100,7 +100,7 @@ epochs=200, miter=100, tau=1e-4, fixval = 1/100, fixiter=100):
 
         xhist = np.append(xhist, [xk], axis=0)
         losses = np.append(losses, [np.linalg.norm(change - xk, ord=2) / np.linalg.norm(xk, ord=2)])
-        olosses = np.append(olosses, [np.linalg.norm(dfloss(xk), ord=2)/np.linalg.norm(xk, ord=2)])
+        olosses = np.append(olosses, [np.linalg.norm(dfloss(xk), ord=2)])
         ahist = np.append(ahist, [loss(xk)])
 
         change -= xk

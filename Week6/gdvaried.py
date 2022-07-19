@@ -95,7 +95,7 @@ fixval = 1/100, fixiter = 100, epochs =1100):
 
         xhist = np.append(xhist, [xk], axis=0)
         ahist = np.append(ahist, [f(xk)])
-        olosses = np.append(olosses, [np.linalg.norm(df(xk), ord=2)/np.linalg.norm(xk, ord=2)])
+        olosses = np.append(olosses, [np.linalg.norm(df(xk), ord=2)])
         losses = np.append(losses, [np.linalg.norm(change - xk, ord=2) / np.linalg.norm(xk, ord=2)])
 
         k += 1
