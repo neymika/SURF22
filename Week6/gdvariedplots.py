@@ -33,29 +33,29 @@ def main():
     s = 100
 
     print("Performing SGD at multiple different stepsizes")
-    stepsizes = [1, .01, .001, .0001, .00001]
+    stepsizes = [1, .1, .01, .001, .0001, .00001]
     decayschedule = [5, 10, 20, 50, 100]
 
-    histsiglosses = pd.read_csv("gdfunc.csv")
+    histsiglosses = pd.read_csv("gdlosses.csv")
     histsiglosses = histsiglosses.apply(lambda x: pd.Series(x.dropna().values))
-    histsigfuncs = pd.read_csv("gdlosses.csv")
+    histsigfuncs = pd.read_csv("gdfunc.csv")
     histsigfuncs = histsigfuncs.apply(lambda x: pd.Series(x.dropna().values))
     histsigolosses = pd.read_csv("gdolosses.csv")
     histsigolosses = histsigolosses.apply(lambda x: pd.Series(x.dropna().values))
 
     params = {'legend.fontsize': 'x-large',
          'figure.titlesize':'x-large',
-         'figure.figsize': (30, 30),
+         'figure.figsize': (35, 30),
          'axes.labelsize': 'x-large',
          'axes.titlesize':'x-large',
          'xtick.labelsize':'x-large',
          'ytick.labelsize':'x-large'}
     with mpl.rc_context(params):
-        fig, axs = plt.subplots(5, 5, sharey='row')
+        fig, axs = plt.subplots(6, 5, sharey='row')
         fig.suptitle(fr'||$\nabla$L(w)|| vs Iterations for GD')
 
         for i in range(len(stepsizes)):
-            for j in range(len(stepsizes)):
+            for j in range(len(decayschedule)):
                 print(f'GD with step size = {stepsizes[i]} and decay Iteration = {decayschedule[j]}')
                 dictkey = str((i+1)*10 + j)
 
@@ -69,14 +69,15 @@ def main():
         plt.setp(axs[:, 0], ylabel=r'||$\nabla$L(w)|| Values')
         plt.savefig("toy_gdtradeoff_oloss.png", bbox_inches='tight')
 
-        fig, axs = plt.subplots(5, 5, sharey='row')
+        fig, axs = plt.subplots(6, 5, sharey='row')
         fig.suptitle(fr'L(w) vs Iterations for GD')
 
         for i in range(len(stepsizes)):
-            for j in range(len(stepsizes)):
+            for j in range(len(decayschedule)):
                 print(f'GD with step size = {stepsizes[i]} and decay Iteration = {decayschedule[j]}')
                 dictkey = str((i+1)*10 + j)
 
+                print(histsigfuncs[dictkey])
                 axs[i, j].plot(range(histsigfuncs[dictkey].shape[0]), histsigfuncs[dictkey], '-')
                 axs[i, j].set_yscale('log')
                 axs[i, j].set_title(\

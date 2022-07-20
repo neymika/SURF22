@@ -46,10 +46,10 @@ def loss(sig, lam=1e-4):
 def dfloss(sig, lam=1e-4):
     xi_til = np.hstack((xi, np.ones((xi.shape[0],1))))
     derivs  = (xi_til @ sig - yi) @ xi_til
-    derivs /= xi.shape[0]
+
     derivs += lam * sig.T
 
-    return derivs
+    return derivs/xi.shape[0]
 
 def psi(sig, i, lam=1e-4):
     sumi = lam*(sig.T @ sig) + ((sig.T @ np.append(xi[i], 1)) - yi[i])**2
@@ -64,50 +64,50 @@ def dfpsi(sig, j, lam=1e-4):
     return derivs
 
 # @ray.remote
-def sgdescent(f, df, x0, etait, \
-epochs=200, miter=100, tau=1e-4, fixval = 1/100, fixiter=100):
-    k = 0
-    maxes = 100
-    xk = np.copy(x0)
-    xhist = np.array([xk])
-    change = x0+1
-    losses = np.array([np.linalg.norm(change-1, ord=2)])
-    np.random.seed(2022)
-    ahist = np.array([loss(xk)])
-    olosses = np.array([np.linalg.norm(dfloss(xk), ord=2)])
+def svrg(xk, num_epochs, epoch_size, step_size, batch_size, \
+minibatch_size, tau=1e-4, fixiter=100, fixval=1/100):
+    xs = np.copy(xk)
+    change = xk+1
+    mu = 0
+    olosses = np.array([np.linalg.norm(dfpsi(xs, np.random.choice(int(epoch_size))), ord=2)])
+    losses = np.array([np.linalg.norm(change, ord=2)])
+    ahist = np.array([loss(xs)])
+    xhist = np.array([xs])
 
-    while losses[-1] > tau:
-        change = np.copy(xk)
-        # alfk = fixval
+    for s in range(num_epochs):
+        change = np.copy(xs)
+        epoch_choice = np.random.choice(xi.shape[0], batch_size, replace=False)
 
-        if k > fixiter:
-            alfk = fixval/(k-fixiter)
+        if s > fixiter:
+            alfk = fixval/np.sqrt(s-fixiter)
         else:
             alfk = fixval
 
-        for m in range(maxes):
-            chosen = np.random.choice(xi.shape[0], maxes, replace=False)
-            minibatch = 0
-            for j in range(miter):
-                minibatch += alfk*df(xk, chosen[m])
+        mu *= 0
+        for i in range(1, epoch_choice.shape[0]):
+            mu += dfpsi(xs, i)
+        mu /= epoch_choice.shape[0]
+        saved = np.array([xs - alfk*mu])
 
-            xk -= minibatch/miter
+        for iter in range(epoch_size):
+            select = np.random.choice(xi.shape[0], minibatch_size, replace=False)
+            bmu = 0
+            for i in range(1, minibatch_size):
+                bmu += dfpsi(saved[iter-1], select[i]) - dfpsi(xs, select[i])
+            bmu /= minibatch_size
+            diff = mu + bmu
 
-        # print(change)
-        # print(xk)
-        # print(dfloss(xk))
-        # print(np.linalg.norm(dfloss(xk), ord=2))
+            saved = np.append(saved, [saved[iter-1]-alfk*diff], axis=0)
 
-        xhist = np.append(xhist, [xk], axis=0)
-        losses = np.append(losses, [np.linalg.norm(change - xk, ord=2) / np.linalg.norm(xk, ord=2)])
-        olosses = np.append(olosses, [np.linalg.norm(dfloss(xk), ord=2)])
-        ahist = np.append(ahist, [loss(xk)])
+        olosses = np.append(olosses, [np.linalg.norm(mu, ord=2)])
 
-        change -= xk
+        xs = saved[np.random.choice(int(epoch_size))]
 
-        k += 1
-        if k == epochs:
-            print("Failed to converge")
+        xhist = np.append(xhist, [xs], axis=0)
+        losses = np.append(losses, [np.linalg.norm(change - xs, ord=2)])
+        ahist = np.append(ahist, [loss(xs)])
+
+        if olosses[-1] < tau:
             break
 
     return xhist, losses, ahist, olosses
@@ -118,42 +118,47 @@ def firsteta(it):
 def main():
     s = 100
 
-    print("Performing SGD at multiple different stepsizes")
-    stepsizes = [1, .01, .001, .0001, .00001]
-    decayschedule = [5, 10, 20, 50, 100]
-    initialguess = 2.25*np.ones(shape=(xi[1].shape[0]+1,))
+    print("Performing SVRG at multiple different stepsizes")
+    stepsizes = [1/(4*1e-4), 1, .01, .001, .0001, .00001, 1/(4*1800001)]
+    decayschedule = [1, 5, 10, 20, 50, 75, 100]
+    eta = 1/(4*200001)
+    n = 10000
+    b = 100
+    m = 100
+    s = 200
+    initialguess = np.ones(shape=(xi[1].shape[0]+1,))
 
-    histsigsgdfound = {}
-    histsigsgdlosses = {}
-    histsigsgdfuncs = {}
-    histsigsgdolosses = {}
+    histsigsvrgfound = {}
+    histsigsvrglosses = {}
+    histsigsvrgfuncs = {}
+    histsigsvrgolosses = {}
     params = {'legend.fontsize': 'x-large',
-          'figure.figsize': (30, 30),
+          'figure.figsize': (35, 35),
          'axes.labelsize': 'x-large',
          'axes.titlesize':'x-large',
          'xtick.labelsize':'x-large',
          'ytick.labelsize':'x-large'}
     with mpl.rc_context(params):
-        fig, axs = plt.subplots(5, 5)
+        fig, axs = plt.subplots(1, 7)
 
         for i in range(len(stepsizes)):
             for j in range(len(stepsizes)):
-                print(f'SGD with step size = {stepsizes[i]} and decay epoch = {decayschedule[j]}')
+                print(f'SVRG with step size = {stepsizes[i]} and decay epoch = {decayschedule[j]}')
                 test_start_iter = timeit.default_timer()
-                sigsgdfound, sigsgdlosses, sigsgdfuncs, sigsgdolosses = \
-                sgdescent(psi, dfpsi, initialguess, firsteta, fixval=stepsizes[i], \
-                fixiter=decayschedule[j], epochs=s)
+                sigfound, siglosses, sigfuncs, sigolosses = \
+                svrg(initialguess, s, m, eta, n, b, tau=1e-4, \
+                fixiter = decayschedule[j], fixval=stepsizes[i])
                 test_end_iter = timeit.default_timer()
                 print(test_end_iter - test_start_iter)
-                print(sigsgdolosses[-1])
-                print(sigsgdfuncs[-1])
+                print(sigolosses[-1])
+                print(sigfuncs[-1])
                 print()
 
                 dictkey = (i+1)*10 + j
-                histsigsgdfound[dictkey] = sigsgdfound
-                histsigsgdlosses[dictkey] = sigsgdlosses
-                histsigsgdfuncs[dictkey] = sigsgdfuncs
-                histsigsgdolosses[dictkey] = sigsgdolosses
+                histsigsvrgfound[dictkey] = sigfound
+                histsigsvrglosses[dictkey] = siglosses
+                histsigsvrgfuncs[dictkey] = sigfuncs
+                histsigsvrgolosses[dictkey] = sigolosses
 
                 # axs[i, j].plot(range(sigsgdfuncs.shape[0]), sigsgdolosses, '-')
                 # axs[i, j].plot(range(sigsgdfuncs.shape[0]), sigsgdfuncs, '-')
@@ -170,16 +175,16 @@ def main():
         # # plt.legend(bbox_to_anchor=(1,0.25), loc='upper left', ncol=1, title="Tradeoff Analysis for SGD")
         # plt.savefig("toy_sgdtradeofffunc.png", bbox_inches='tight')
 
-        dffuncs = dict([ (k,pd.Series(v)) for k,v in histsigsgdfuncs.items() ])
+        dffuncs = dict([ (k,pd.Series(v)) for k,v in histsigsvrgfuncs.items() ])
         dffuncs = pd.DataFrame(data=dffuncs)
-        dflosses = dict([ (k,pd.Series(v)) for k,v in histsigsgdlosses.items() ])
+        dflosses = dict([ (k,pd.Series(v)) for k,v in histsigsvrglosses.items() ])
         dflosses = pd.DataFrame(data=dflosses)
-        dfolosses = dict([ (k,pd.Series(v)) for k,v in histsigsgdolosses.items() ])
+        dfolosses = dict([ (k,pd.Series(v)) for k,v in histsigsvrgolosses.items() ])
         dfolosses = pd.DataFrame(data=dfolosses)
 
-        dffuncs.to_csv("sgdfunc.csv", index=False)
-        dflosses.to_csv("sgdlosses.csv", index=False)
-        dfolosses.to_csv("sgdolosses.csv", index=False)
+        dffuncs.to_csv("svrgfasterfunc.csv", index=False)
+        dflosses.to_csv("svrgfasterlosses.csv", index=False)
+        dfolosses.to_csv("svrgfasterolosses.csv", index=False)
 
 if __name__ == "__main__":
     main()

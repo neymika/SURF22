@@ -36,9 +36,9 @@ def main():
     stepsizes = [1, .01, .001, .0001, .00001]
     decayschedule = [5, 10, 20, 50, 100]
 
-    histsiglosses = pd.read_csv("sgdfunc.csv", header=0)
+    histsiglosses = pd.read_csv("sgdlosses.csv", header=0)
     histsiglosses = histsiglosses.apply(lambda x: pd.Series(x.dropna().values))
-    histsigfuncs = pd.read_csv("sgdlosses.csv", header=0)
+    histsigfuncs = pd.read_csv("sgdfunc.csv", header=0)
     histsigfuncs = histsigfuncs.apply(lambda x: pd.Series(x.dropna().values))
     histsigolosses = pd.read_csv("sgdolosses.csv", header=0)
     histsigolosses = histsigolosses.apply(lambda x: pd.Series(x.dropna().values))
@@ -57,7 +57,7 @@ def main():
         fig.suptitle(fr'||$\nabla$L(w)|| vs Epochs for SGD')
 
         for i in range(len(stepsizes)):
-            for j in range(len(stepsizes)):
+            for j in range(len(decayschedule)):
                 print(f'SGD with step size = {stepsizes[i]} and decay epoch = {decayschedule[j]}')
                 dictkey = str((i+1)*10 + j)
 
@@ -75,10 +75,11 @@ def main():
         fig.suptitle(fr'L(w)vs Epochs for SGD')
 
         for i in range(len(stepsizes)):
-            for j in range(len(stepsizes)):
+            for j in range(len(decayschedule)):
                 print(f'SGD with step size = {stepsizes[i]} and decay epoch = {decayschedule[j]}')
                 dictkey = str((i+1)*10 + j)
 
+                print(histsigfuncs[dictkey].shape[0])
                 axs[i, j].plot(range(histsigfuncs[dictkey].shape[0]), histsigfuncs[dictkey], '-')
                 axs[i, j].set_yscale('log')
                 axs[i, j].set_title(\
@@ -87,7 +88,7 @@ def main():
 
         plt.setp(axs[-1, :], xlabel='Epochs')
         plt.setp(axs[:, 0], ylabel=r'L(w) Values')
-        plt.savefig("toy_sgdtradeoff_func.png", bbox_inches='tight')
+        plt.savefig("toy_sgdtradeoff_func.png", bbox_inches="tight")
 
 
 

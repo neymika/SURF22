@@ -46,10 +46,10 @@ def loss(sig, lam=1e-4):
 def dfloss(sig, lam=1e-4):
     xi_til = np.hstack((xi, np.ones((xi.shape[0],1))))
     derivs  = (xi_til @ sig - yi) @ xi_til
-
+    derivs /= xi.shape[0]
     derivs += lam * sig.T
 
-    return derivs/xi.shape[0]
+    return derivs
 
 def psi(sig, i, lam=1e-4):
     sumi = lam*(sig.T @ sig) + ((sig.T @ np.append(xi[i], 1)) - yi[i])**2
@@ -110,11 +110,11 @@ def firsteta(it):
 def main():
     s = 100
 
-    print("Performing SGD at multiple different stepsizes")
-    stepsizes = [1, .01, .001, .0001, .00001]
+    print("Performing GD at multiple different stepsizes")
+    stepsizes = [1, .1, .01, .001, .0001, .00001]
     decayschedule = [5, 10, 20, 50, 100]
     initialguess = 2.25*np.ones(shape=(xi[1].shape[0]+1,))
-
+    npbetas = np.linalg.lstsq(xi, yi)
     histsigfound = {}
     histsiglosses = {}
     histsigfuncs = {}
@@ -129,7 +129,7 @@ def main():
         fig, axs = plt.subplots(5, 5)
 
         for i in range(len(stepsizes)):
-            for j in range(len(stepsizes)):
+            for j in range(len(decayschedule)):
                 print(f'GD with step size = {stepsizes[i]} and decay epoch = {decayschedule[j]}')
                 test_start_iter = timeit.default_timer()
                 gdsigmafound, gdsiglosses, gdsigfuncs, gdsigolosses = \
@@ -137,8 +137,10 @@ def main():
                 .5, fixval = stepsizes[i], fixiter = decayschedule[j], epochs=s)
                 test_end_iter = timeit.default_timer()
                 print(test_end_iter - test_start_iter)
-                print(gdsigolosses[-1])
-                print(gdsigfuncs[-1])
+                print(f'Norm grad losses: {gdsigolosses[-1]}')
+                print(f'losses: {gdsigfuncs[-1]}')
+                print(f'W found: {gdsigmafound[-1]}')
+                print(f'LSTSQ found w {npbetas[0]}')
                 print()
 
                 dictkey = (i+1)*10 + j
