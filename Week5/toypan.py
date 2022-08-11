@@ -10,7 +10,7 @@ from bokeh.layouts import gridplot
 import itertools
 import sys
 import ray
-plt.style.use('seaborn-white')
+plt.style.use('tableau-colorblind10')
 # Set up basic style of bokeh plotting
 # output_notebook()
 def style(p, autohide=False):
@@ -301,7 +301,7 @@ def main():
     print()
 
     params = {'legend.fontsize': 'x-large',
-          'figure.figsize': (18, 18),
+          'figure.figsize': (18, 6),
          'axes.labelsize': 'x-large',
          'axes.titlesize':'x-large',
          'xtick.labelsize':'x-large',

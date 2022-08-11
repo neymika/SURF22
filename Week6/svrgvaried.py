@@ -79,13 +79,13 @@ minibatch_size, tau=1e-4, fixiter=100, fixval=1/100):
         epoch_choice = np.random.choice(xi.shape[0], batch_size, replace=False)
 
         if s > fixiter:
-            alfk = fixval/np.sqrt(s-fixiter)
+            alfk = fixval/(s-fixiter)
         else:
             alfk = fixval
 
         mu *= 0
-        for i in range(1, epoch_choice.shape[0]):
-            mu += dfpsi(xs, i)
+        for i in range(batch_size):
+            mu += dfpsi(xs, epoch_choice[i])
         mu /= epoch_choice.shape[0]
         saved = np.array([xs - alfk*mu])
 
@@ -139,7 +139,7 @@ def main():
          'xtick.labelsize':'x-large',
          'ytick.labelsize':'x-large'}
     with mpl.rc_context(params):
-        fig, axs = plt.subplots(len(stepsizes), len(decayschedule))
+        fig, axs = plt.subplots(1, 7)
 
         for i in range(len(stepsizes)):
             for j in range(len(decayschedule)):
@@ -182,9 +182,9 @@ def main():
         dfolosses = dict([ (k,pd.Series(v)) for k,v in histsigsvrgolosses.items() ])
         dfolosses = pd.DataFrame(data=dfolosses)
 
-        dffuncs.to_csv("svrgfasterfunc.csv", index=False)
-        dflosses.to_csv("svrgfasterlosses.csv", index=False)
-        dfolosses.to_csv("svrgfasterolosses.csv", index=False)
+        dffuncs.to_csv("svrgfunc.csv", index=False)
+        dflosses.to_csv("svrglosses.csv", index=False)
+        dfolosses.to_csv("svrgolosses.csv", index=False)
 
 if __name__ == "__main__":
     main()

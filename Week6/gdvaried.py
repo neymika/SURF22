@@ -78,7 +78,7 @@ fixval = 1/100, fixiter = 100, epochs =1100):
     losses = np.array([np.linalg.norm(change-1, ord=2)])
 
     # while np.linalg.norm(df(xk), ord=2)/np.linalg.norm(xk, ord=2) > tau:
-    while np.linalg.norm(dfloss(xk), ord=2)/np.linalg.norm(xk, ord=2) > tau:
+    while np.linalg.norm(dfloss(xk), ord=2) > tau:
         change = np.copy(xk)
 
         if k != 0:
@@ -112,7 +112,7 @@ def main():
 
     print("Performing GD at multiple different stepsizes")
     stepsizes = [1, .1, .01, .001, .0001, .00001]
-    decayschedule = [5, 10, 20, 50, 100]
+    decayschedule = [1, 5, 10, 20, 50, 100]
     initialguess = 2.25*np.ones(shape=(xi[1].shape[0]+1,))
     npbetas = np.linalg.lstsq(xi, yi)
     histsigfound = {}

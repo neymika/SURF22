@@ -106,7 +106,7 @@ epochs=200, miter=100, tau=1e-4, fixval = 1/100, fixiter=100):
         change -= xk
 
         k += 1
-        if k == epochs:
+        if k == epochs or np.log10(ahist[-1]) > 30:
             print("Failed to converge")
             break
 
@@ -119,8 +119,8 @@ def main():
     s = 100
 
     print("Performing SGD at multiple different stepsizes")
-    stepsizes = [1, .01, .001, .0001, .00001]
-    decayschedule = [5, 10, 20, 50, 100]
+    stepsizes = [1, .1, .01, .001, .0001, .00001]
+    decayschedule = [1, 5, 10, 20, 50, 100]
     initialguess = 2.25*np.ones(shape=(xi[1].shape[0]+1,))
 
     histsigsgdfound = {}
@@ -134,10 +134,10 @@ def main():
          'xtick.labelsize':'x-large',
          'ytick.labelsize':'x-large'}
     with mpl.rc_context(params):
-        fig, axs = plt.subplots(5, 5)
+        fig, axs = plt.subplots(len(stepsizes), len(decayschedule))
 
         for i in range(len(stepsizes)):
-            for j in range(len(stepsizes)):
+            for j in range(len(decayschedule)):
                 print(f'SGD with step size = {stepsizes[i]} and decay epoch = {decayschedule[j]}')
                 test_start_iter = timeit.default_timer()
                 sigsgdfound, sigsgdlosses, sigsgdfuncs, sigsgdolosses = \
@@ -169,6 +169,24 @@ def main():
         #
         # # plt.legend(bbox_to_anchor=(1,0.25), loc='upper left', ncol=1, title="Tradeoff Analysis for SGD")
         # plt.savefig("toy_sgdtradeofffunc.png", bbox_inches='tight')
+        #
+        # fig.suptitle(fr'L(w)vs Epochs for SGD')
+        #
+        # for i in range(len(stepsizes)):
+        #     for j in range(len(decayschedule)):
+        #         print(f'SGD with step size = {stepsizes[i]} and decay epoch = {decayschedule[j]}')
+        #         dictkey = (i+1)*10 + j
+        #
+        #         df = histsigsgdfuncs[dictkey]
+        #         axs[i, j].plot(range(df.shape[0]), df, '-')
+        #         axs[i, j].set_yscale('log')
+        #         axs[i, j].set_title(\
+        #         rf'$\eta$: {stepsizes[i]}, $\eta = 1/s$ Starting Epoch: {decayschedule[j]}')
+        #
+        #
+        # plt.setp(axs[-1, :], xlabel='Epochs')
+        # plt.setp(axs[:, 0], ylabel=r'L(w) Values')
+        # plt.savefig("toy_sgdtradeoff_func.png", bbox_inches="tight")
 
         dffuncs = dict([ (k,pd.Series(v)) for k,v in histsigsgdfuncs.items() ])
         dffuncs = pd.DataFrame(data=dffuncs)

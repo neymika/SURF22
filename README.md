@@ -168,4 +168,7 @@
         python3 gdvaried.py
         python3 gdvariedplots.py
         ```
-  * 7/19 Debugged prior code (toypan.py and sgdvaried.py). Will now perform a similar comparison for SVRG as detailed in week6todo.png
+  * 7/19 Debugged prior code (toypan.py and sgdvaried.py) and read network paper for group meeting tomorrow. Will now perform a similar comparison for SVRG as detailed in week6todo.png
+  * 7/20 Further debugged code with elizabeth. Will do a similar comparison for svrg
+  * 7/21 Worked on abstract a little bit and then finished debugging SVRG code. Also applied to GROW22.
+  * 7/22 Went up to the bay to visit family.
