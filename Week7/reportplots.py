@@ -64,7 +64,7 @@ def main():
          }
     lbl = "#000000"
     tk = "#808080"
-    colors = ["#3A637B", "#C4A46B", "#FF6917", "#D44141" ]
+    colors = ["#3A637B", "#C4A46B", "#FF6917", "#D44141", "#54ccff"]
     with mpl.rc_context(params):
         fig, axs = plt.subplots(1, 3, sharey='row')
         # fig.suptitle(fr'||$\nabla$L(w)|| vs Epochs for SVRG')
@@ -152,6 +152,7 @@ def main():
         # fig.suptitle(fr'L(w)vs Epochs for SVRG')
 
         svrgdictkey = str(21)
+        svrgmfdictkey = str(20)
         sgddictkey = str(32)
         gddictkey = str(11)
         lastindex = histsigfuncs[svrgdictkey].notna()[::-1].idxmax()
@@ -167,6 +168,12 @@ def main():
         xrange = range(0, lastindex+1)
         axs.plot(xrange, histsigolosses[gddictkey][0:lastindex+1], '-.', \
         alpha=.8, label=rf'GD $\eta$: {stepsizes[0]}', color=colors[1])
+        histsigolosses = pd.read_csv("../Week9/svrgcosolosses.csv", header=0)
+        histsigolosses = histsigolosses.apply(lambda x: pd.Series(x.dropna().values))
+        lastindex = histsigolosses[svrgmfdictkey].notna()[::-1].idxmax()
+        xrange = range(0, lastindex+1)
+        axs.plot(xrange, histsigolosses[svrgmfdictkey][0:lastindex+1], '-.', \
+        alpha=.8, label=rf'SVRG MF $\eta$: {stepsizes[1]}', color=colors[4])
         histsigolosses = pd.read_csv("../Week6/sgdolosses.csv", header=0)
         histsigolosses = histsigolosses.apply(lambda x: pd.Series(x.dropna().values))
         lastindex = histsigolosses[sgddictkey].notna()[::-1].idxmax()
@@ -192,8 +199,8 @@ def main():
 
         plt.setp(axs, xlabel=r'Major Epochs (# of $\nabla$Ψ(w)/m)')
         plt.setp(axs, ylabel=r'||$\nabla$L(w)|| Values')
-        plt.legend(loc = "lower center",bbox_to_anchor=(0.5,0.9), ncol=4, title="Optimization Methods")
-        plt.savefig("all_best_comp.png", bbox_inches='tight')
+        plt.legend(loc = "lower center",bbox_to_anchor=(0.5,0.9), ncol=5, title="Optimization Methods")
+        plt.savefig("all_best_comp_new.png", bbox_inches='tight')
 
 if __name__ == "__main__":
     main()
